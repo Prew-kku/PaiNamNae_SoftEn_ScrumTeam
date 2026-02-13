@@ -142,11 +142,30 @@
                                     {{ isLoading ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง' }}
                                 </button>
                             </div>
+
+                            <!-- ส่วนขอลบข้อมูล Thongchai5956 -->
+                            <div v-if="originalUserData?.role !== 'ADMIN'" class="pt-6 mt border-t border-gray-200">                 
+                                <div class="flex justify-center md:justify-end mt-4">
+                                    <button @click="openDeleteModal" type="button"
+                                        class="px-6 py-2 text-sm font-semibold text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                        ลบบัญชี
+                                    </button>
+                                </div>
+                            </div>           
+
                         </form>
                     </div>
                 </main>
             </div>
         </div>
+
+        <!-- Thongchai5956 -->
+        <DeleteAccountRequestModal
+            :show="showDeleteModal"
+            @close="closeDeleteModal"
+            @confirm="handleDeleteRequest"
+        />
+
     </div>
 </template>
 
@@ -157,6 +176,9 @@ import { useToast } from '~/composables/useToast';
 import ProfileSidebar from '~/components/ProfileSidebar.vue';
 import dayjs from 'dayjs'
 import 'dayjs/locale/th'
+// Thongchai595-6
+import DeleteAccountRequestModal from '~/components/DeleteAccountRequestModal.vue'
+
 
 dayjs.locale('th')
 
@@ -294,6 +316,54 @@ async function handleProfileUpdate() {
         form.profilePictureFile = null;
     }
 }
+
+// Thongchai5956 
+const showDeleteModal = ref(false)
+
+const openDeleteModal = () => {
+    showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+    showDeleteModal.value = false
+}
+
+const handleDeleteRequest = async (requestData) => {
+    
+    try{
+    // TODO เด้อ Backend : เรียก API สำหรับขอลบข้อมูล
+    // await $api('/users/request-deletion', {
+    //     method: 'POST',
+    //     body: requestData
+    // })   
+
+
+    console.log('Delete request data:', requestData) 
+    
+    toast.success(
+    'ส่งคำขอสำเร็จ',
+    'คำขอลบข้อมูลของคุณได้รับการบันทึกแล้ว ทีมงานจะดำเนินการภายใน 30 วัน'
+    )
+
+    closeDeleteModal()
+
+    // TODO 2 เด้อ Backend : Logout user after successful request
+    // setTimeout(() => {
+    //     logout()
+    // }, 2000)
+
+    } catch (error) {
+        console.error('Delete request failed:', error)
+        toast.error(
+            'เกิดข้อผิดพลาด',
+            error?.data?.message || 'ไม่สามารถส่งคำขอได้ กรุณาลองใหม่อีกครั้ง'
+        )
+        closeDeleteModal
+    }
+}
+
+
+
 </script>
 
 <style scoped>
