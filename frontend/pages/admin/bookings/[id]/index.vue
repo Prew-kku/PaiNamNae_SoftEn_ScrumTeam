@@ -3,7 +3,7 @@
         <AdminHeader />
         <AdminSidebar />
 
-        <main id="main-content" class="main-content mt-16 ml-0 lg:ml-[280px] p-6">
+        <main id="main-content" class="main-content ml-0 lg:ml-[280px] p-6">
             <!-- Back -->
             <div class="mb-8">
                 <NuxtLink to="/admin/bookings"
