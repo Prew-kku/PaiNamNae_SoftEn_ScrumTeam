@@ -46,7 +46,7 @@
                                     <div>
                                         <label class="block mb-1 text-xs font-medium text-gray-600">ชื่อผู้ใช้
                                             (username) *</label>
-                                        <input v-model.trim="form.username" type="text" placeholder="user_001"
+                                        <input v-model.trim="form.username" type="text" placeholder="อย่างน้อย 4 ตัวอักษร"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                     <div>

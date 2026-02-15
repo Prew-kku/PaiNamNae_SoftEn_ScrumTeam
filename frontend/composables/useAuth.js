@@ -56,4 +56,4 @@ export function useAuth() {
   }
 
   return { token, user, login, logout, register }
-}
+} 
