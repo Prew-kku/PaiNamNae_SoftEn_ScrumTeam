@@ -3,6 +3,10 @@
         <AdminHeader />
         <AdminSidebar />
 
+        <!-- Mobile Overlay -->
+        <div id="overlay" class="fixed inset-0 z-40 hidden bg-black bg-opacity-50 lg:hidden"
+            @click="closeMobileSidebar"></div>
+
         <!-- Main Content -->
         <main id="main-content" class="main-content ml-0 lg:ml-[280px] p-6">
             <div class="mx-auto max-w-8xl">
@@ -260,6 +264,14 @@
 import AdminHeader from '~/components/admin/AdminHeader.vue'
 import AdminSidebar from '~/components/admin/AdminSidebar.vue'
 
+function closeMobileSidebar() {
+    const sidebar = document.getElementById('sidebar')
+    const overlay = document.getElementById('overlay')
+    if (!sidebar || !overlay) return
+    sidebar.classList.remove('mobile-open')
+    overlay.classList.add('hidden')
+}
+
 useHead({
     title: 'All Requests • Admin',
     link: [{ rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' }]
@@ -276,7 +288,7 @@ const filters = reactive({
     role: ''
 })
 
-// ─── Mock Data (จะเปลี่ยนเป็น API เมื่อ backend พร้อม) ───
+// test
 const requests = ref([
     // ── Deletion requests ──
     {
@@ -517,7 +529,7 @@ function formatDate(iso) {
 // ─── Admin Note Modal ───
 const modal = reactive({
     show: false,
-    action: '',       // 'approve' | 'reject'
+    action: '',       // 'approve', 'reject'
     request: null,
     adminNote: ''
 })
