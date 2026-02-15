@@ -4,7 +4,7 @@
         <AdminSidebar />
 
         <!-- Main Content -->
-        <main id="main-content" class="main-content mt-16 ml-0 lg:ml-[280px] p-6">
+        <main id="main-content" class="main-content ml-0 lg:ml-[280px] p-6">
             <!-- Page Title -->
             <div class="mx-auto max-w-8xl">
                 <!-- Title + Controls -->
@@ -105,7 +105,6 @@
                     </div>
                 </div>
 
-
                 <!-- Card -->
                 <div class="bg-white border border-gray-300 rounded-lg shadow-sm">
                     <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 sm:px-6">
@@ -197,22 +196,22 @@
                                     </td>
 
                                     <td class="px-4 py-3 text-gray-700">
-                                        <div class="text-sm">{{ formatDate(u.createdAt) }}</div>
+                                        <div class="text-sm">{{ formatDate(r.createdAt) }}</div>
                                         <div class="text-xs text-gray-500">อัปเดต {{ formatDate(u.updatedAt) }}</div>
                                     </td>
 
                                     <td class="px-4 py-3 ">
-                                        <button @click="onViewUser(u)"
+                                        <button @click="onViewUser(r)"
                                             class="p-2 text-gray-500 transition-colors cursor-pointer hover:text-emerald-600"
                                             title="ดูรายละเอียด" aria-label="ดูรายละเอียด">
                                             <i class="text-lg fa-regular fa-eye"></i>
                                         </button>
-                                        <button @click="onEditUser(u)"
+                                        <button @click="onEditUser(r)"
                                             class="p-2 text-gray-500 transition-colors cursor-pointer hover:text-blue-600"
                                             title="แก้ไข" aria-label="แก้ไข">
                                             <i class="text-lg fa-regular fa-pen-to-square"></i>
                                         </button>
-                                        <button @click="askDelete(u)"
+                                        <button @click="askDelete(r)"
                                             class="p-2 text-gray-500 transition-colors cursor-pointer hover:text-red-600"
                                             title="ลบ" aria-label="ลบ">
                                             <i class="text-lg fa-regular fa-trash-can"></i>
@@ -365,7 +364,6 @@ function asTriBool(v) {
     if (v === false || v === 'false') return false
     return undefined
 }
-
 
 async function fetchUsers(page = 1) {
     isLoading.value = true
