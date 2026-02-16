@@ -39,15 +39,14 @@
                     <div class="grid grid-cols-1 gap-3 px-4 py-4 sm:px-6 lg:grid-cols-[repeat(24,minmax(0,1fr))]">
                         <!-- Start Location Name -->
                         <div class="lg:col-span-4">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดเริ่มต้น (ใช้ key:
-                                name)</label>
+                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดเริ่มต้น</label>
                             <input v-model.trim="filters.startName" type="text" placeholder="เช่น มอแดง เพลส"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
 
                         <!-- End Location Name -->
                         <div class="lg:col-span-4">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">ปลายทาง (ใช้ key: name)</label>
+                            <label class="block mb-1 text-xs font-medium text-gray-600">ปลายทาง</label>
                             <input v-model.trim="filters.endName" type="text" placeholder="เช่น โลตัส ขอนแก่น 2"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>

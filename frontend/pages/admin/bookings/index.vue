@@ -39,14 +39,14 @@
                     <div class="grid grid-cols-1 gap-3 px-4 py-4 sm:px-6 lg:grid-cols-[repeat(24,minmax(0,1fr))]">
                         <!-- Pickup Name -->
                         <div class="lg:col-span-4">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดรับ (ใช้ key: name)</label>
+                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดรับ</label>
                             <input v-model.trim="filters.pickupName" type="text" placeholder="เช่น มอแดง เพลส"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
 
                         <!-- Dropoff Name -->
                         <div class="lg:col-span-4">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดส่ง (ใช้ key: name)</label>
+                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดส่ง</label>
                             <input v-model.trim="filters.dropoffName" type="text" placeholder="เช่น โลตัส ขอนแก่น 2"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
