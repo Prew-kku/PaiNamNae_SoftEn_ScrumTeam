@@ -19,4 +19,7 @@ router.use('/bookings', bookingRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/api/maps', mapRoutes);
 
+// Thongchai595-6
+router.use('/deletion', require('./deletion.routes'))
+
 module.exports = router;
