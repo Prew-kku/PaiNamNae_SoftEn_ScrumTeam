@@ -12,21 +12,25 @@
                     <!-- Left: Title + Create Button -->
                     <div class="flex items-center gap-3">
                         <h1 class="text-2xl font-semibold text-gray-800">User Management</h1>
-                        <button @click="onCreateUser"
-                            class="inline-flex items-center gap-2 px-3 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
-                            <i class="fa-solid fa-plus"></i>
-                            <span class="hidden sm:inline">สร้างผู้ใช้ใหม่</span>
-                        </button>
                     </div>
 
                     <!-- Right: Quick Search -->
                     <div class="flex items-center gap-2">
-                        <input v-model.trim="filters.q" @keyup.enter="applyFilters" type="text"
-                            placeholder="ค้นหา : Email / User / Name"
-                            class="max-w-full px-3 py-2 border border-gray-300 rounded-md w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <div class="relative">
+                            <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-magnifying-glass left-3 top-1/2"></i>
+                            <input v-model.trim="filters.q" @keyup.enter="applyFilters" type="text"
+                                placeholder="Email / User / Name"
+                                class="py-2 pl-10 pr-4 border border-gray-300 rounded-lg w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
                         <button @click="applyFilters"
-                            class="px-4 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
+                            class="px-4 py-2 text-white transition-colors bg-blue-600 rounded-lg cursor-pointer hover:bg-blue-700">
                             ค้นหา
+                        </button>
+
+                        <button @click="onCreateUser"
+                            class="inline-flex items-center gap-2 px-3 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
+                            <i class="fa-solid fa-plus"></i>
+                            <span class="hidden sm:inline">สร้างผู้ใช้ใหม่</span>
                         </button>
                     </div>
                 </div>
@@ -35,81 +39,78 @@
                 <div class="mb-4 bg-white border border-gray-300 rounded-lg shadow-sm">
                     <div class="grid grid-cols-1 gap-3 px-4 py-4 sm:px-6 lg:grid-cols-[repeat(24,minmax(0,1fr))]">
 
-                        <!-- Start (3/24) -->
-                        <div class="lg:col-span-3">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดเริ่มต้น</label>
-                            <input v-model="filters.startName" type="text"
-                                placeholder="ชื่อสถานที่เริ่มต้น (ใช้ key: name)"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
-                        </div>
-
-                        <!-- End (3/24) -->
-                        <div class="lg:col-span-3">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">ปลายทาง</label>
-                            <input v-model="filters.endName" type="text" placeholder="ชื่อปลายทาง (ใช้ key: name)"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
-                        </div>
-
-                        <!-- status (3/24) -->
-                        <div class="lg:col-span-3">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">สถานะ</label>
-                            <select v-model="filters.status"
+                        <!-- บทบาท -->
+                        <div class="lg:col-span-4">
+                            <label class="block mb-1 text-xs font-medium text-gray-600">บทบาท</label>
+                            <select v-model="filters.role" @change="applyFilters"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
                                 <option value="">ทั้งหมด</option>
-                                <option value="AVAILABLE">AVAILABLE</option>
-                                <option value="FULL">FULL</option>
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="DRIVER">DRIVER</option>
+                                <option value="USER">USER</option>
                             </select>
                         </div>
 
-                        <!-- Departure From (4/24) -->
+                        <!-- ยืนยันตัวตน -->
                         <div class="lg:col-span-4">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">ออกเดินทางตั้งแต่
-                                (YYYY-MM-DD)</label>
-                            <input v-model="filters.departureFrom" type="date"
+                            <label class="block mb-1 text-xs font-medium text-gray-600">ยืนยันตัวตน</label>
+                            <select v-model="filters.isVerified" @change="applyFilters"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
+                                <option value="">ทั้งหมด</option>
+                                <option value="true">ยืนยันแล้ว</option>
+                                <option value="false">ยังไม่ยืนยัน</option>
+                            </select>
+                        </div>
+
+                        <!-- สถานะ -->
+                        <div class="lg:col-span-4">
+                            <label class="block mb-1 text-xs font-medium text-gray-600">สถานะ</label>
+                            <select v-model="filters.isActive" @change="applyFilters"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
+                                <option value="">ทั้งหมด</option>
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+
+                        <!-- สร้างตั้งแต่ -->
+                        <div class="lg:col-span-4">
+                            <label class="block mb-1 text-xs font-medium text-gray-600">สร้างตั้งแต่</label>
+                            <input v-model="filters.createdFrom" @change="applyFilters" type="date"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
 
-                        <!-- Departure To (4/24) -->
+                        <!-- ถึงวันที่ -->
                         <div class="lg:col-span-4">
                             <label class="block mb-1 text-xs font-medium text-gray-600">ถึงวันที่</label>
-                            <input v-model="filters.departureTo" type="date"
+                            <input v-model="filters.createdTo" @change="applyFilters" type="date"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
 
-                        <!-- Sort (รวม sortBy + sortOrder) (3/24) -->
-                        <div class="lg:col-span-3">
+                        <!-- เรียงตาม -->
+                        <div class="lg:col-span-4">
                             <label class="block mb-1 text-xs font-medium text-gray-600">เรียงตาม</label>
-                            <select v-model="filters.sort"
+                            <select v-model="filters.sort" @change="applyFilters"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
                                 <option value="">(ค่าเริ่มต้น)</option>
-                                <option value="departureTime:desc">departureTime desc</option>
-                                <option value="departureTime:asc">departureTime asc</option>
-                                <option value="createdAt:desc">createdAt desc</option>
-                                <option value="createdAt:asc">createdAt asc</option>
-                                <option value="updatedAt:desc">updatedAt desc</option>
-                                <option value="updatedAt:asc">updatedAt asc</option>
+                                <option value="createdAt:desc">สร้างล่าสุด</option>
+                                <option value="createdAt:asc">สร้างเก่าสุด</option>
+                                <option value="updatedAt:desc">อัปเดตล่าสุด</option>
+                                <option value="updatedAt:asc">อัปเดตเก่าสุด</option>
                             </select>
                         </div>
 
-                        <!-- Actions (2/24) -->
-                        <div class="flex items-end justify-end gap-2 mt-1 lg:col-span-4 lg:mt-0">
-                            <button @click="clearFilters"
-                                class="px-3 py-2 text-gray-700 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
-                                ล้างตัวกรอง
-                            </button>
-                            <button @click="applyFilters"
-                                class="px-4 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
-                                ใช้ตัวกรอง
-                            </button>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Card -->
                 <div class="bg-white border border-gray-300 rounded-lg shadow-sm">
-                    <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 sm:px-6">
-                        <div class="text-sm text-gray-600">
-                            หน้าที่ {{ pagination.page }} / {{ totalPages }} • ทั้งหมด {{ pagination.total }} ผู้ใช้
+                    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/50">
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="text-gray-400 fa-solid fa-list-ul"></i>
+                            หน้าที่ {{ pagination.page }} / {{ totalPages }}
+                            <span class="text-gray-300">|</span>
+                            ทั้งหมด <span class="font-semibold text-gray-800">{{ pagination.total }}</span> รายการ
                         </div>
                     </div>
 

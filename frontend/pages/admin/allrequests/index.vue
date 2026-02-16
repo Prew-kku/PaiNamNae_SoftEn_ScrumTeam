@@ -18,11 +18,14 @@
 
                     <!-- Right: Quick Search -->
                     <div class="flex items-center gap-2">
-                        <input v-model.trim="filters.q" @keyup.enter="applyFilters" type="text"
-                            placeholder="ค้นหา : Email / User / Name"
-                            class="max-w-full px-3 py-2 border border-gray-300 rounded-md w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <div class="relative">
+                            <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-magnifying-glass left-3 top-1/2"></i>
+                            <input v-model.trim="filters.q" @keyup.enter="applyFilters" type="text"
+                                placeholder="Email / User / Name"
+                                class="py-2 pl-10 pr-4 border border-gray-300 rounded-lg w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
                         <button @click="applyFilters"
-                            class="px-4 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
+                            class="px-4 py-2 text-white transition-colors bg-blue-600 rounded-lg cursor-pointer hover:bg-blue-700">
                             ค้นหา
                         </button>
                     </div>
@@ -74,9 +77,12 @@
 
                 <!-- Card -->
                 <div class="bg-white border border-gray-300 rounded-lg shadow-sm">
-                    <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 sm:px-6">
-                        <div class="text-sm text-gray-600">
-                            หน้าที่ {{ pagination.page }} / {{ totalPages }} • ทั้งหมด {{ pagination.total }} คำร้อง
+                    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/50">
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="text-gray-400 fa-solid fa-list-ul"></i>
+                            หน้าที่ {{ pagination.page }} / {{ totalPages }}
+                            <span class="text-gray-300">|</span>
+                            ทั้งหมด <span class="font-semibold text-gray-800">{{ pagination.total }}</span> คำร้อง
                         </div>
                     </div>
 
@@ -133,20 +139,16 @@
                                     </td>
                                     <td class="px-4 py-3 text-gray-700">{{ r.user.email }}</td>
                                     <td class="px-4 py-3 text-gray-700">{{ r.user.username }}</td>
-                                    <td class="px-4 py-3">
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
-                                            :class="roleBadge(r.user.role)">
-                                            {{ r.user.role }}
-                                        </span>
+                                    <td class="px-4 py-3 text-sm text-gray-700">
+                                        {{ r.user.role }}
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
-                                            :class="typeBadge(r.type)">
-                                            {{ typeLabel(r.type) }}
-                                        </span>
+
+
+                                    <td class="px-4 py-3 text-sm text-gray-700">
+                                        {{ typeLabel(r.type) }}
                                     </td>
+
+
                                     <td class="px-4 py-3">
                                         <span
                                             class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
@@ -154,6 +156,8 @@
                                             {{ statusLabel(r.status) }}
                                         </span>
                                     </td>
+
+                                    <!-- row ของ สร้างเมื่อ -->
                                     <td class="px-4 py-3 text-gray-700">
                                         <div class="text-sm">{{ formatDate(r.createdAt) }}</div>
                                     </td>
@@ -517,13 +521,17 @@ function statusLabel(status) {
 
 function formatDate(iso) {
     if (!iso) return '-'
-    return new Date(iso).toLocaleDateString('th-TH', {
+    const d = new Date(iso)
+    const datePart = d.toLocaleDateString('th-TH', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric',
+        day: 'numeric'
+    })
+    const timePart = d.toLocaleTimeString('th-TH', {
         hour: '2-digit',
         minute: '2-digit'
     })
+    return `${datePart} ${timePart}`
 }
 
 // ─── Admin Note Modal ───
