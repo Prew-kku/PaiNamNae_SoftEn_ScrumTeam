@@ -196,22 +196,22 @@
                                     </td>
 
                                     <td class="px-4 py-3 text-gray-700">
-                                        <div class="text-sm">{{ formatDate(r.createdAt) }}</div>
+                                        <div class="text-sm">{{ formatDate(u.createdAt) }}</div>
                                         <div class="text-xs text-gray-500">อัปเดต {{ formatDate(u.updatedAt) }}</div>
                                     </td>
 
                                     <td class="px-4 py-3 ">
-                                        <button @click="onViewUser(r)"
+                                        <button @click="onViewUser(u)"
                                             class="p-2 text-gray-500 transition-colors cursor-pointer hover:text-emerald-600"
                                             title="ดูรายละเอียด" aria-label="ดูรายละเอียด">
                                             <i class="text-lg fa-regular fa-eye"></i>
                                         </button>
-                                        <button @click="onEditUser(r)"
+                                        <button @click="onEditUser(u)"
                                             class="p-2 text-gray-500 transition-colors cursor-pointer hover:text-blue-600"
                                             title="แก้ไข" aria-label="แก้ไข">
                                             <i class="text-lg fa-regular fa-pen-to-square"></i>
                                         </button>
-                                        <button @click="askDelete(r)"
+                                        <button @click="askDelete(u)"
                                             class="p-2 text-gray-500 transition-colors cursor-pointer hover:text-red-600"
                                             title="ลบ" aria-label="ลบ">
                                             <i class="text-lg fa-regular fa-trash-can"></i>
