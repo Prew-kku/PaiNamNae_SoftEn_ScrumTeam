@@ -1,4 +1,4 @@
-i<template>
+<template>
     <header class="fixed top-0 left-0 right-0 z-50 h-16 bg-white border border-gray-300 shadow-sm">
         <div class="flex items-center justify-between h-full px-4">
             <div class="flex items-center gap-4">
