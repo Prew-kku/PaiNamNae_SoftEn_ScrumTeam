@@ -14,6 +14,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # 2. กล่อง Backend
   backend:
@@ -44,7 +49,8 @@ services:
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
 
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   # 3. กล่อง Frontend
   frontend:
