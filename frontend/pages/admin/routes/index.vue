@@ -11,21 +11,25 @@
                     <!-- Left: Title + Create Button -->
                     <div class="flex items-center gap-3">
                         <h1 class="text-2xl font-semibold text-gray-800">Route Management</h1>
-                        <button @click="onCreateRoute"
-                            class="inline-flex items-center gap-2 px-3 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
-                            <i class="fa-solid fa-plus"></i>
-                            <span class="hidden sm:inline">สร้างเส้นทางใหม่</span>
-                        </button>
                     </div>
 
                     <!-- Right: Quick Search -->
                     <div class="flex items-center gap-2">
-                        <input v-model.trim="filters.q" @keyup.enter="applyFilters" type="text"
-                            placeholder="ค้นหา : สรุปเส้นทาง / ไดรเวอร์ / ยานพาหนะ"
-                            class="max-w-full px-3 py-2 border border-gray-300 rounded-md w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <div class="relative">
+                            <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-magnifying-glass left-3 top-1/2"></i>
+                            <input v-model.trim="filters.q" @keyup.enter="applyFilters" type="text"
+                                placeholder="สรุปเส้นทาง / ไดรเวอร์ / ยานพาหนะ"
+                                class="py-2 pl-10 pr-4 border border-gray-300 rounded-lg w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
                         <button @click="applyFilters"
-                            class="px-4 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
+                            class="px-4 py-2 text-white transition-colors bg-blue-600 rounded-lg cursor-pointer hover:bg-blue-700">
                             ค้นหา
+                        </button>
+
+                        <button @click="onCreateRoute"
+                            class="inline-flex items-center gap-2 px-3 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
+                            <i class="fa-solid fa-plus"></i>
+                            <span class="hidden sm:inline">สร้างเส้นทางใหม่</span>
                         </button>
                     </div>
                 </div>
@@ -33,17 +37,16 @@
                 <!-- Advanced Filters -->
                 <div class="mb-4 bg-white border border-gray-300 rounded-lg shadow-sm">
                     <div class="grid grid-cols-1 gap-3 px-4 py-4 sm:px-6 lg:grid-cols-[repeat(24,minmax(0,1fr))]">
-                        <!-- Start Location Name (5/24) -->
-                        <div class="lg:col-span-5">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดเริ่มต้น (ใช้ key:
-                                name)</label>
+                        <!-- Start Location Name -->
+                        <div class="lg:col-span-4">
+                            <label class="block mb-1 text-xs font-medium text-gray-600">จุดเริ่มต้น</label>
                             <input v-model.trim="filters.startName" type="text" placeholder="เช่น มอแดง เพลส"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
 
-                        <!-- End Location Name (5/24) -->
-                        <div class="lg:col-span-5">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">ปลายทาง (ใช้ key: name)</label>
+                        <!-- End Location Name -->
+                        <div class="lg:col-span-4">
+                            <label class="block mb-1 text-xs font-medium text-gray-600">ปลายทาง</label>
                             <input v-model.trim="filters.endName" type="text" placeholder="เช่น โลตัส ขอนแก่น 2"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
@@ -51,7 +54,7 @@
                         <!-- Status (4/24) -->
                         <div class="lg:col-span-4">
                             <label class="block mb-1 text-xs font-medium text-gray-600">สถานะ</label>
-                            <select v-model="filters.status"
+                            <select v-model="filters.status" @change="applyFilters"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
                                 <option value="">ทั้งหมด</option>
                                 <option value="AVAILABLE">AVAILABLE</option>
@@ -60,25 +63,24 @@
                             </select>
                         </div>
 
-                        <!-- Departure From (5/24) -->
-                        <div class="lg:col-span-5">
-                            <label class="block mb-1 text-xs font-medium text-gray-600">เวลาออกเดินทางตั้งแต่
-                                (YYYY-MM-DD)</label>
-                            <input v-model="filters.departureFrom" type="date"
+                        <!-- Departure From -->
+                        <div class="lg:col-span-4">
+                            <label class="block mb-1 text-xs font-medium text-gray-600">เวลาออกเดินทางตั้งแต่</label>
+                            <input v-model="filters.departureFrom" @change="applyFilters" type="date"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
 
-                        <!-- Departure To (5/24) -->
-                        <div class="lg:col-span-5">
+                        <!-- Departure To -->
+                        <div class="lg:col-span-4">
                             <label class="block mb-1 text-xs font-medium text-gray-600">ถึงวันที่</label>
-                            <input v-model="filters.departureTo" type="date"
+                            <input v-model="filters.departureTo" @change="applyFilters" type="date"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
 
                         <!-- Sort (รวม sortBy + sortOrder) -->
                         <div class="lg:col-span-4">
                             <label class="block mb-1 text-xs font-medium text-gray-600">เรียงตาม</label>
-                            <select v-model="filters.sort"
+                            <select v-model="filters.sort" @change="applyFilters"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
                                 <option value="">(ค่าเริ่มต้น)</option>
                                 <option value="createdAt:desc">createdAt desc</option>
@@ -90,25 +92,17 @@
                             </select>
                         </div>
 
-                        <!-- Actions (2/24) -->
-                        <div class="flex items-end justify-end gap-2 mt-1 lg:col-span-4 lg:mt-0">
-                            <button @click="clearFilters"
-                                class="px-3 py-2 text-gray-700 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
-                                ล้างตัวกรอง
-                            </button>
-                            <button @click="applyFilters"
-                                class="px-4 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
-                                ใช้ตัวกรอง
-                            </button>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Card -->
                 <div class="bg-white border border-gray-300 rounded-lg shadow-sm">
-                    <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 sm:px-6">
-                        <div class="text-sm text-gray-600">
-                            หน้าที่ {{ pagination.page }} / {{ totalPages }} • ทั้งหมด {{ pagination.total }} เส้นทาง
+                    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/50">
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="text-gray-400 fa-solid fa-list-ul"></i>
+                            หน้าที่ {{ pagination.page }} / {{ totalPages }}
+                            <span class="text-gray-300">|</span>
+                            ทั้งหมด <span class="font-semibold text-gray-800">{{ pagination.total }}</span> เส้นทาง
                         </div>
                     </div>
 
