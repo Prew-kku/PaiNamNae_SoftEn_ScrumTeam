@@ -1,5 +1,9 @@
 require("dotenv").config();
 
+console.log("--------------------");
+console.log("🔥 HELLO FROM SERVER FILE! I AM ALIVE!");
+console.log("--------------------");
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,19 +20,16 @@ const ensureAdmin = require('./src/bootstrap/ensureAdmin');
 const app = express();
 promClient.collectDefaultMetrics();
 
-app.use(helmet());
-
 const corsOptions = {
-    origin: ['http://localhost:3001',
-        'https://amazing-crisp-9bcb1a.netlify.app'],
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
-
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // เปิดรับ preflight สำหรับทุก route
+app.options('*', cors(corsOptions));
 
+app.use(helmet());
 app.use(express.json());
 
 //Rate Limiting
@@ -83,7 +84,8 @@ const PORT = process.env.PORT || 3000;
         console.error('Admin bootstrap failed:', e);
     }
 
-    app.listen(PORT, () => {
+// เติม '0.0.0.0' เข้าไปตรงกลางครับ
+    app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
 })();
