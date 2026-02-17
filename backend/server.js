@@ -13,6 +13,8 @@ const ApiError = require('./src/utils/ApiError')
 const { metricsMiddleware } = require('./src/middlewares/metrics');
 const ensureAdmin = require('./src/bootstrap/ensureAdmin');
 
+const initCronJobs = require('./src/utils/cronJobs');
+
 const app = express();
 promClient.collectDefaultMetrics();
 
@@ -82,6 +84,8 @@ const PORT = process.env.PORT || 3000;
     } catch (e) {
         console.error('Admin bootstrap failed:', e);
     }
+
+    initCronJobs();
 
     app.listen(PORT, () => {
         console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

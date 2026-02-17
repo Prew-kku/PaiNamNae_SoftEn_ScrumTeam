@@ -1,115 +1,156 @@
-// Thongchai595-6 
-const prisma = require('../utils/prisma');
-const ApiError = require('../utils/ApiError');
-const dayjs = require('dayjs');
-const { Profiler } = require('react');
+// Thongchai595-6
+const prisma = require("../utils/prisma");
+const bcrypt = require("bcrypt");
+const ApiError = require("../utils/ApiError");
 
-// User ขอลบข้อมูล
-exports.requestDeletion = async (userId, reason, additionalDetails) => {
-    return prisma.$transaction(async (tx) => {
-        // เช็คว่ามี Pending ไหม
-        const existing = await tx.deletionRequest.findFirst({
-            where: {
-                userId,
-                type: "deletion",
-                status: "pending",
-            },
-        });
+const requestDeletion = async (userId, password, reason) => {
+    // 1. ตรวจสอบ User
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    });
 
-        if (existing) {
-            throw new ApiError(400, 'มีคำขอลบบัญชีที่ยังรอดำเนินการอยู่แล้ว');
-        }
+    if (!user) throw new ApiError(404, "User not found");
 
-        // สร้าง deletion request 
-        const request = await tx.request.create({
-            deta: {
-                type: "deletion",
-                status: "pending",
-                userId,
-                deletion: {
-                    create: {
-                        reason,
-                        description,
-                    },
-                },
-            },
-        })
+    // 2. ตรวจสอบ Password
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) throw new ApiError(401, "Incorrect password");
 
-        // SOFT DELETE ทันทีหลังขอลบ
+    // 3. ตรวจสอบคำขอค้าง (Prevent Double Request)
+    const existingRequest = await prisma.deletionRequest.findUnique({
+        where: { userId },
+    });
+
+    if (existingRequest) throw new ApiError(400, "Deletion request already pending");
+
+    // 4. ดำเนินการ Suspend User และสร้าง Request
+    // ใช้ Transaction เพื่อความถูกต้องของข้อมูล
+    await prisma.$transaction(async (tx) => {
+        // ตั้ง isActive = false (Login ไม่ได้, สมัครใหม่ด้วย Email เดิมไม่ได้เพราะติด Unique Constraint)
         await tx.user.update({
             where: { id: userId },
+            data: { isActive: false }
+        });
+
+        // สร้าง DeletionRequest สถานะ PENDING
+        await tx.deletionRequest.create({
             data: {
-                isActivate: false,
-                deletedAt: new Date(),
+                userId,
+                reason,
+                status: "PENDING",
+                // backupData
+                backupData: {
+                    initiatedAt: new Date(),
+                    note: "Waiting for admin approval to perform full backup"
+                }
+            }
+        });
+    });
 
-                email: `deleted_${userId}@deleted.local`,
-                username: `deleted_${userId}`,
-                password: "deleted",
+    return { message: "Deletion requested. Account suspended. Waiting for admin approval." };
+};
 
-                firtName: null,
-                lastName: null,
-                phoneNumber: null,
-                profilePicture: null,
-            },
-        })
-        return request
-    })
-} 
+const getAllDeletionRequests = async () => {
+    return await prisma.deletionRequest.findMany({
+        orderBy: { requestedAt: "desc" },
+        include: {
+            user: { select: { id: true, email: true, username: true, role: true } }
+        }
+    });
+};
 
-// Admin อนุมัติคำขอลบ
-exports.approveDeletion = async (requestId, adminNote) => {
-    const request = await prisma.request.findUnique({
-        where: { id: requestId },
-    })
 
-    if (!request || request.type !== "deletion") {
-        throw new ApiError(404, 'ไม่พบคำขอลบบัญชี');
+const approveDeletion = async (requestId) => {
+    const request = await prisma.deletionRequest.findUnique({
+        where: { id: requestId }
+    });
+
+    if (!request) throw new ApiError(404, "Request not found");
+
+    const userId = request.userId;
+
+    // 1. โหลดข้อมูลทั้งหมดเพื่อทำ Backup
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            vehicles: true,
+            bookings: true,
+            createdRoutes: true,
+            driverVerification: true,
+        },
+    });
+
+    if (!user) {
+        // กรณีไม่เจอ User (อาจจะถูกลบไปแล้ว) ให้เคลียร์ Request ทิ้ง
+        await prisma.deletionRequest.delete({ where: { id: requestId } });
+        throw new ApiError(404, "User not found");
     }
 
-    // update status เป็น approved + นับถอยหลังลบ 90 วัน
-    await prisma.request.update({
-        where: { id: requestId },
-        data: {
-            status: "approved",
-            deletion: {
-                update: {
-                    approvedAt: new Date(),
-                },
-            },
+    // เตรียมข้อมูล Backup (Anonymized ในระดับ Audit Log ได้ถ้าต้องการ หรือเก็บ Raw ไว้เป็นหลักฐาน)
+    const backupData = {
+        userProfile: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            createdAt: user.createdAt,
         },
-    })
-    
-    await prisma.update({
-        where: { id: request.userId },
         data: {
-            haedDeleteScheduledAt: dayjs().add(90, 'day').toDate(),
-        },
-    })
-    return true
-}
- 
-// Admin ปฏิเสธคำขอลบ
-exports.rejectDeletion = async (requestId, adminNote) => {
-    const request = await prisma.request.findUnique({
-        where: { id: requestId },
-    })
+            vehicles: user.vehicles,
+            bookings: user.bookings,
+            routes: user.createdRoutes,
+            verification: user.driverVerification
+        }
+    };
 
-    if (!request || request.type !== "deletion") {
-        throw new ApiError(404, 'ไม่พบคำขอลบบัญชี');
-    }
+    // 2. & 3. Transaction: สร้าง Audit Log และ Hard Delete User
+    await prisma.$transaction(async (tx) => {
+        // สร้าง Audit Log
+        await tx.deletionAudit.create({
+            data: {
+                originalUserId: user.id,
+                originalEmail: user.email,
+                reason: request.reason,
+                status: "COMPLETED",
+                performedBy: "ADMIN",
+                backupData: backupData
+            }
+        });
 
-    await prisma.request.update({
-        where: { id: requestId },
-        data: {
-            status: "rejected",
-            deletion: {
-                update: {
-                    adminNote: note || "มีการปฏิเสธคำขอลบบัญชี",
-                    reviewedById: adminId,
-                    reviewedAt: new Date(),
-                },
-            },
-        },
-    })
-    return true
-}
+        // HARD DELETE User
+        await tx.user.delete({
+            where: { id: userId }
+        });
+    });
+
+    return { message: "User hard deleted and audit log created." };
+};
+
+const rejectDeletion = async (requestId) => {
+    const request = await prisma.deletionRequest.findUnique({
+        where: { id: requestId }
+    });
+
+    if (!request) throw new ApiError(404, "Request not found");
+
+    await prisma.$transaction(async (tx) => {
+        // เปิดใช้งานให้ User อีกครั้ง
+        await tx.user.update({
+            where: { id: request.userId },
+            data: { isActive: true }
+        });
+
+        // ลบคำขอทิ้ง
+        await tx.deletionRequest.delete({
+            where: { id: requestId }
+        });
+    });
+
+    return { message: "Deletion request rejected. Account reactivated." };
+};
+
+module.exports = {
+    requestDeletion,
+    getAllDeletionRequests,
+    approveDeletion,
+    rejectDeletion,
+};
