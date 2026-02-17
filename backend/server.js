@@ -21,19 +21,13 @@ const app = express();
 promClient.collectDefaultMetrics();
 
 const corsOptions = {
-    origin: ['http://localhost:3001',
-        'https://amazing-crisp-9bcb1a.netlify.app',
-        'https://painamnaesoftenscrumteam-production.up.railway.app', // URL Backend ตัวเอง 
-        'http://cskkugrop3sec4.cpkku.com', 
-        'https://cskkugrop3sec4.cpkku.com' // เผื่อมี https
-    ],
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
-
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // เปิดรับ preflight สำหรับทุก route
+app.options('*', cors(corsOptions));
 
 app.use(helmet());
 app.use(express.json());
