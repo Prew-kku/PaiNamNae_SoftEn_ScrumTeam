@@ -1,5 +1,9 @@
 require("dotenv").config();
 
+console.log("--------------------");
+console.log("🔥 HELLO FROM SERVER FILE! I AM ALIVE!");
+console.log("--------------------");
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
