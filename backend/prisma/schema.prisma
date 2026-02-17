@@ -88,12 +88,7 @@ model User {
   notification          Notification[]
   createdRoutes         Route[]             @relation("DriverRoutes")
   bookings              Booking[]           @relation("PassengerBookings")
-
-deletedAt DateTime?
-deletionReviews DeletionRequest[] @relation("DeletionReviewedBy")
-ticketReplies TicketReply[] @relation("TicketReplySender")
-requests Request[]
-
+  deletionRequest       DeletionRequest?
 
   @@index([role])
   @@index([isActive])
@@ -218,136 +213,32 @@ model Booking {
   createdAt       DateTime      @default(now())
 }
 
-// --- ส่วนที่เพิ่มใหม่สำหรับระบบขอลบ (Siwawit402-3) ---
-
-model Request {
-  id        String   @id @default(cuid())
-
-  type      RequestType
-  status    RequestStatus 
-
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  deletion  DeletionRequest?
-  ticket    Ticket?
-
-  @@index([userId])
-  @@index([type, status])
-  @@index([createdAt])
+enum DeletionStatus {
+  PENDING         // รอ Admin อนุมัติ
+  APPROVED        // อนุมัติแล้ว รอครบ 90 วัน
+  REJECTED        // ปฏิเสธ (เก็บถาวร)
 }
-
 
 model DeletionRequest {
-  id          String   @id
-  request Request @relation(fields: [id], references: [id], onDelete: Cascade)
-
-  reason      DeletionReason
-  description String?
-
-  adminNote   String?
-
-  reviewedById String?
-  reviewedBy   User? @relation("DeletionReviewedBy", fields: [reviewedById], references: [id])
-
-  reviewedAt   DateTime?
-
-  @@index([reviewedById])
+  id                String         @id @default(cuid())
+  userId            String         @unique
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason            String?        
+  backupData        Json           @db.Json // เก็บข้อมูลทั้งหมดของบัญชีตอนที่ขอลบ
+  status            DeletionStatus @default(PENDING)
+  requestedAt       DateTime       @default(now())
+  approvedAt        DateTime?
+  scheduledDeleteAt DateTime?      // วันที่จะ Hard Delete
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
-
-
-enum DeletionReason {
-    NO_LONGER_NEEDED         // ไม่ต้องการใช้บริการอีกต่อไป
-    PRIVACY_CONCERNS         // กังวลเรื่องความเป็นส่วนตัว
-    INCORRECT_DATA           // ข้อมูลไม่ถูกต้อง/ไม่เป็นปัจจุบัน
-    SERVICE_DISSATISFACTION  // ไม่พึงพอใจกับบริการ
-    SECURITY_BREACH          // ข้อมูลรั่วไหลหรือมีปัญหาด้านความปลอดภัย
-    OTHER                    // อื่นๆ
-  }
-
-
-
-model Ticket {
-  id          String   @id
-  request Request @relation(fields: [id], references: [id], onDelete: Cascade)
-
-  type        TicketType
-  title       String
-  description String
-
-  replies     TicketReply[]
-  attachments TicketAttachment[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-
-
-model TicketAttachment {
-  id        String   @id @default(cuid())
-
-  ticketId  String
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-
-  url       String
-  publicId  String
-  type      AttachmentType
-
-  createdAt DateTime @default(now())
-
-  @@index([ticketId])
-}
-
-
-
-enum AttachmentType {
-  image
-  video
-}
-
-
-
-model TicketReply {
-  id        String   @id @default(cuid())
-
-  ticketId  String
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-
-  senderId  String
-  sender   User @relation("TicketReplySender", fields: [senderId], references: [id])
-  
-  message   String
-
-  createdAt DateTime @default(now())
-
-  @@index([ticketId])
-  @@index([senderId])
-}
-
-
-enum RequestType {
-  deletion
-  incident
-  behavior
-}
-
-
-enum RequestStatus {
-  pending
-  approved
-  rejected
-  open
-  in_progress
-  resolved
-  closed
-}
-
-
-enum TicketType {
-  incident
-  behavior
+model DeletionAudit {
+  id              String   @id @default(cuid())
+  originalUserId  String   // เก็บ ID เดิมไว้อ้างอิง
+  originalEmail   String?  // เก็บ Email เดิม 
+  deletedAt       DateTime @default(now())
+  reason          String?
+  status          String   // 'COMPLETED'
+  performedBy     String?  // 'SYSTEM_CRON'
+  backupData      Json?     @db.Json
 }
