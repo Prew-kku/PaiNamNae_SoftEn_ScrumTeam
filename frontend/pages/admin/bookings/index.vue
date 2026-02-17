@@ -476,6 +476,8 @@ async function fetchBookings() {
     try {
         const token = useCookie('token').value || (process.client ? localStorage.getItem('token') : '')
         const res = await fetch('https://painamnaesoftenscrumteam-production.up.railway.app/api/bookings/admin', {
+        const res = await fetch('http://localhost:3000/api/bookings/admin', {//เพื่อการพัฒนาใช้ localhost ก่อนนะครับ
+        //const res = await fetch('https://painamnaesoftenscrumteam-production.up.railway.app/api/bookings/admin', {//เมื่อจะ deploy ค่อยเปลี่ยนเป็น URL จริงครับ
             headers: {
                 Accept: 'application/json',
                 ...(token ? { Authorization: `Bearer ${token}` } : {})

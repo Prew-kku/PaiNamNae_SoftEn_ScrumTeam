@@ -408,7 +408,7 @@ async function handleSubmit() {
     isSubmitting.value = true
     try {
         const id = route.params.id
-        const apiBase = useRuntimeConfig().public.apiBase || 'https://painamnaesoftenscrumteam-production.up.railway.app/api'
+        const apiBase = useRuntimeConfig().public.apiBase 
         let token = ''
         try { token = useCookie('token')?.value || '' } catch { }
         if (process.client && !token) token = localStorage.getItem('token') || ''
