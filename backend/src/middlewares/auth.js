@@ -14,6 +14,11 @@ const protect = asyncHandler(async (req, res, next) => {
             // Verify token
             const decoded = verifyToken(token);
 
+            const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
+            if (!user) throw new ApiError(401, 'User not found');
+
+            if (!user.isActive) throw new ApiError(401, 'User is deactivated');
+
             // Attach user to the request object
             req.user = {
                 sub: decoded.sub,
