@@ -20,11 +20,9 @@ const ensureAdmin = require('./src/bootstrap/ensureAdmin');
 const app = express();
 promClient.collectDefaultMetrics();
 
-app.use(helmet());
-
 const corsOptions = {
     origin: ['http://localhost:3001',
-        'https://amazing-crisp-9bcb1a.netlify.app'
+        'https://amazing-crisp-9bcb1a.netlify.app',
         'https://painamnaesoftenscrumteam-production.up.railway.app', // URL Backend ตัวเอง 
         'http://cskkugrop3sec4.cpkku.com', 
         'https://cskkugrop3sec4.cpkku.com' // เผื่อมี https
@@ -37,6 +35,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // เปิดรับ preflight สำหรับทุก route
 
+app.use(helmet());
 app.use(express.json());
 
 //Rate Limiting
