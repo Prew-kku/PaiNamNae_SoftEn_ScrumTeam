@@ -8,20 +8,25 @@
                 <div class="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex items-center gap-3">
                         <h1 class="text-2xl font-semibold text-gray-800">Vehicle Management</h1>
+                    </div>
+
+                    <!-- Right: Quick Search -->
+                    <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-magnifying-glass left-3 top-1/2"></i>
+                            <input v-model.trim="filters.q" @keyup.enter="applyFilters" type="text"
+                                placeholder="รุ่น, ป้ายทะเบียน, เจ้าของ"
+                                class="py-2 pl-10 pr-4 border border-gray-300 rounded-lg w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
+                        <button @click="applyFilters"
+                            class="px-4 py-2 text-white transition-colors bg-blue-600 rounded-lg cursor-pointer hover:bg-blue-700">
+                            ค้นหา
+                        </button>
+
                         <button @click="onCreateVehicle"
                             class="inline-flex items-center gap-2 px-3 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
                             <i class="fa-solid fa-plus"></i>
                             <span class="hidden sm:inline">สร้างยานพาหนะใหม่</span>
-                        </button>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <input v-model.trim="filters.q" @keyup.enter="applyFilters" type="text"
-                            placeholder="ค้นหา : รุ่น, ป้ายทะเบียน, เจ้าของ..."
-                            class="max-w-full px-3 py-2 border border-gray-300 rounded-md w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <button @click="applyFilters"
-                            class="px-4 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
-                            ค้นหา
                         </button>
                     </div>
                 </div>
@@ -30,9 +35,9 @@
                     <div class="grid grid-cols-1 gap-3 px-4 py-4 sm:px-6 lg:grid-cols-[repeat(24,minmax(0,1fr))]">
 
                         <!-- vehicleType: เปลี่ยนเป็น dropdown -->
-                        <div class="lg:col-span-4">
+                        <div class="lg:col-span-6">
                             <label class="block mb-1 text-xs font-medium text-gray-600">ประเภทยานพาหนะ</label>
-                            <select v-model="filters.vehicleType"
+                            <select v-model="filters.vehicleType" @change="applyFilters"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
                                 <option value="">ทั้งหมด</option>
                                 <option value="SEDAN">Sedan</option>
@@ -43,15 +48,15 @@
                             </select>
                         </div>
 
-                        <div class="lg:col-span-4">
+                        <div class="lg:col-span-6">
                             <label class="block mb-1 text-xs font-medium text-gray-600">สี</label>
                             <input v-model.trim="filters.color" type="text" placeholder="เช่น ขาว, ดำ"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500" />
                         </div>
 
-                        <div class="lg:col-span-4">
+                        <div class="lg:col-span-6">
                             <label class="block mb-1 text-xs font-medium text-gray-600">ค่าเริ่มต้น</label>
-                            <select v-model="filters.isDefault"
+                            <select v-model="filters.isDefault" @change="applyFilters"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
                                 <option value="">ทั้งหมด</option>
                                 <option value="true">ใช่</option>
@@ -59,33 +64,25 @@
                             </select>
                         </div>
 
-                        <div class="lg:col-span-4">
+                        <div class="lg:col-span-6">
                             <label class="block mb-1 text-xs font-medium text-gray-600">เรียงตาม</label>
-                            <select v-model="filters.sort"
+                            <select v-model="filters.sort" @change="applyFilters"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
                                 <option value="">(ค่าเริ่มต้น)</option>
                                 <option value="createdAt:desc">สร้างล่าสุด</option>
                                 <option value="createdAt:asc">สร้างเก่าสุด</option>
                             </select>
                         </div>
-
-                        <div class="flex items-end justify-end gap-2 mt-1 lg:col-span-8 lg:mt-0">
-                            <button @click="clearFilters"
-                                class="px-3 py-2 text-gray-700 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
-                                ล้างตัวกรอง
-                            </button>
-                            <button @click="applyFilters"
-                                class="px-4 py-2 text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700">
-                                ใช้ตัวกรอง
-                            </button>
-                        </div>
                     </div>
                 </div>
 
                 <div class="bg-white border border-gray-300 rounded-lg shadow-sm">
-                    <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 sm:px-6">
-                        <div class="text-sm text-gray-600">
-                            หน้าที่ {{ pagination.page }} / {{ totalPages }} • ทั้งหมด {{ pagination.total }} คัน
+                    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/50">
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <i class="text-gray-400 fa-solid fa-list-ul"></i>
+                            หน้าที่ {{ pagination.page }} / {{ totalPages }}
+                            <span class="text-gray-300">|</span>
+                            ทั้งหมด <span class="font-semibold text-gray-800">{{ pagination.total }}</span> คัน
                         </div>
                     </div>
 

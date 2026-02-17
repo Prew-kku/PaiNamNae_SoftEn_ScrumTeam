@@ -49,8 +49,10 @@ services:
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
 
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+    volumes:
+      - ./backend:/app          # Mount โค้ดเข้าไปทำงาน
+      - /app/node_modules      # แยก node_modules ออกไป ไม่ให้โดน mount ทับ (เพราะมันถูกสร้างใน container แล้ว) บอกให้ใช้ node_modules ของ Linux ในกล่องเท่านั้น
 
   # 3. กล่อง Frontend
   frontend:
