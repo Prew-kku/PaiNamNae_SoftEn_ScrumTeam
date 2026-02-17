@@ -4,7 +4,9 @@
 FROM node:18-slim
 
 # ติดตั้ง OpenSSL ที่ Prisma ต้องการ (เพื่อความชัวร์ 100%)
-RUN apt-get update -y && apt-get install -y openssl
+RUN apt-get update -y \
+ && apt-get install -y openssl \
+ && rm -rf /var/lib/apt/lists/*
 
 # กำหนดโฟลเดอร์ทำงาน
 WORKDIR /app
@@ -25,4 +27,4 @@ RUN npx prisma generate
 EXPOSE 3000
 
 # สั่งรัน Server
-CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]

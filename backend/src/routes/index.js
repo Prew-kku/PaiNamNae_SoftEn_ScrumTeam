@@ -9,6 +9,8 @@ const notificationRoutes = require('./notification.routes')
 const mapRoutes = require('./maps.routes')
 
 const router = express.Router();
+// Thongchai595-6
+const deletionRoutes = require('./deletion.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -18,5 +20,8 @@ router.use('/driver-verifications', driverVerifRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/api/maps', mapRoutes);
+
+// Thongchai595-6
+router.use('/deletion', deletionRoutes);
 
 module.exports = router;
