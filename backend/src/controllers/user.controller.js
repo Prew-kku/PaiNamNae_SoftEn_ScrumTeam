@@ -137,11 +137,19 @@ const adminUpdateUser = asyncHandler(async (req, res) => {
     });
 });
 
+const emailService = require('../services/email.service');
+
 const adminDeleteUser = asyncHandler(async (req, res) => {
     const deletedUser = await userService.deleteUser(req.params.id);
+
+    // ส่งอีเมลแจ้งเตือนการลบบัญชี
+    if (deletedUser && deletedUser.email) {
+        await emailService.sendAccountDeletionEmail(deletedUser.email, deletedUser.username);
+    }
+
     res.status(200).json({
         success: true,
-        message: "User deleted successfully.",
+        message: "User deleted successfully and notification email sent.",
         data: { deletedUserId: deletedUser.id }
     });
 });
