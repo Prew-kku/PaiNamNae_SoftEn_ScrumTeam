@@ -382,7 +382,7 @@ async function handleSubmit() {
         try { token = useCookie('token')?.value || '' } catch { }
         if (process.client && !token) token = localStorage.getItem('token') || ''
 
-        const apiBase = useRuntimeConfig().public.apiBase || 'http://localhost:3000/api'
+        const apiBase = useRuntimeConfig().public.apiBase 
         const result = await postForm(`${apiBase}/users`, fd, token)
 
         toast.success('สำเร็จ', result?.message || 'สร้างผู้ใช้เรียบร้อย')

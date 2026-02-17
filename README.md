@@ -248,7 +248,7 @@ NUXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_for_frontend
 
 ## API Endpoints
 
-Visit [**http://localhost:3000/documentation**](http://localhost:3000/documentation) for interactive Swagger UI and full API reference.
+Visit [**https://painamnaesoftenscrumteam-production.up.railway.app/documentation**](https://painamnaesoftenscrumteam-production.up.railway.app/documentation) for interactive Swagger UI and full API reference.
 
 ### Authentication
 

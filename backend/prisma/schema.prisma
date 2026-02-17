@@ -88,6 +88,7 @@ model User {
   notification          Notification[]
   createdRoutes         Route[]             @relation("DriverRoutes")
   bookings              Booking[]           @relation("PassengerBookings")
+  deletionRequest       DeletionRequest?
 
   @@index([role])
   @@index([isActive])
@@ -210,4 +211,34 @@ model Booking {
   pickupLocation  Json          @db.Json
   dropoffLocation Json          @db.Json
   createdAt       DateTime      @default(now())
+}
+
+enum DeletionStatus {
+  PENDING         // รอ Admin อนุมัติ
+  APPROVED        // อนุมัติแล้ว รอครบ 90 วัน
+  REJECTED        // ปฏิเสธ (เก็บถาวร)
+}
+
+model DeletionRequest {
+  id                String         @id @default(cuid())
+  userId            String         @unique
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason            String?        
+  backupData        Json           @db.Json // เก็บข้อมูลทั้งหมดของบัญชีตอนที่ขอลบ
+  status            DeletionStatus @default(PENDING)
+  requestedAt       DateTime       @default(now())
+  approvedAt        DateTime?
+  scheduledDeleteAt DateTime?      // วันที่จะ Hard Delete
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+model DeletionAudit {
+  id              String   @id @default(cuid())
+  originalUserId  String   // เก็บ ID เดิมไว้อ้างอิง
+  originalEmail   String?  // เก็บ Email เดิม 
+  deletedAt       DateTime @default(now())
+  reason          String?
+  status          String   // 'COMPLETED'
+  performedBy     String?  // 'SYSTEM_CRON'
+  backupData      Json?     @db.Json
 }
