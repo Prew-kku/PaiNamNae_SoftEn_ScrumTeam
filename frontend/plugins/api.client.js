@@ -1,37 +1,32 @@
-import { useCookie } from '#app'
-
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
+  
+  // 1. ดึง Reference ของ Cookie มา (ยังไม่เอา .value)
+  const token = useCookie('token')
 
   const api = $fetch.create({
     baseURL: config.public.apiBase,
     credentials: 'include',
 
     async onRequest({ options }) {
-      const token = useCookie('token').value
-      if (token) {
+      // 2. เช็คค่า .value ในจังหวะที่จะยิง Request จริงๆ
+      if (token.value) {
         options.headers = {
           ...options.headers,
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token.value}`,
         }
       }
     },
 
     onResponse({ response }) {
-      if (response._data && Object.prototype.hasOwnProperty.call(response._data, 'data')) {
-        response._data = response._data.data
+      // Logic เดิมของคุณ: แกะ data ออกมา
+      if (response._data && response._data.data) {
+         response._data = response._data.data
       }
     },
-    // onResponse({ response }) {
-    //   const b = response._data
-    //   if (b && typeof b === 'object' && Object.prototype.hasOwnProperty.call(b, 'data')) {
-    //     response._data = Object.prototype.hasOwnProperty.call(b, 'pagination')
-    //       ? { data: b.data, pagination: b.pagination }   
-    //       : b.data                                       
-    //   }
-    // },
 
     onResponseError({ response }) {
+      // ... Logic error handling เดิมของคุณ ...
       let body = response?._data
       if (typeof body === 'string') {
         try { body = JSON.parse(body) } catch { }
@@ -44,6 +39,14 @@ export default defineNuxtPlugin(() => {
         response?.statusText ||
         'Request failed'
 
+      // เพิ่ม: ถ้า Token หมดอายุ (401) ให้ล้าง Cookie แล้วดีดไปหน้า Login
+      if (response.status === 401) {
+          token.value = null;
+          if (process.client) {
+             // window.location.href = '/login'; // เปิดบรรทัดนี้ถ้าต้องการให้เด้งออก
+          }
+      }
+
       throw createError({
         statusCode: response?.status || 500,
         statusMessage: msg,
@@ -53,4 +56,4 @@ export default defineNuxtPlugin(() => {
   })
 
   return { provide: { api } }
-})
+}) 
