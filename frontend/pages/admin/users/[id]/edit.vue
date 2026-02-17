@@ -4,7 +4,7 @@
         <AdminSidebar />
 
         <!-- Main Content -->
-        <main id="main-content" class="main-content mt-16 ml-0 lg:ml-[280px] p-6">
+        <main id="main-content" class="main-content ml-0 lg:ml-[280px] p-6">
             <div class="mb-8">
                 <NuxtLink to="/admin/users"
                     class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
@@ -46,7 +46,7 @@
                                     <div>
                                         <label class="block mb-1 text-xs font-medium text-gray-600">ชื่อผู้ใช้
                                             (username) *</label>
-                                        <input v-model.trim="form.username" type="text" placeholder="user_001"
+                                        <input v-model.trim="form.username" type="text" placeholder="อย่างน้อย 4 ตัวอักษร"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                     <div>

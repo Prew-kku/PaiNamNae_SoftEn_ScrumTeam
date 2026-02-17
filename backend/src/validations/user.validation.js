@@ -3,7 +3,7 @@ const { Role } = require('@prisma/client')
 
 const createUserSchema = z.object({
     email: z.string().email("Invalid email format"),
-    username: z.string().min(4, "username is require"),
+    username: z.string().min(4, "username must be at least 4 characters"),
     password: z.string().min(8, "password must be at least 8 characters"),
     firstName: z.string().min(1, "firstname is require"),
     lastName: z.string().min(1, "lastname is require"),
@@ -20,7 +20,7 @@ const idParamSchema = z.object({
 
 const updateMyProfileSchema = z.object({
     email: z.string().email("Invalid email format").optional(),
-    username: z.string().min(6, "username is require").optional(),
+    username: z.string().min(4, "username must be at least 4 characters").optional(),
     firstName: z.string().min(1, "firstname is require").optional(),
     lastName: z.string().min(1, "lastname is require").optional(),
     phoneNumber: z.string().min(10, "phoneNumber is require").optional(),

@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # 1. กล่อง Database
+  db:
+    image: postgres:15-alpine
+    container_name: painamnae-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 2. กล่อง Backend
+  backend:
+    build: ./backend
+    container_name: painamnae-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # สร้าง Connection String อัตโนมัติจากตัวแปรด้านบน
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: ${PORT}
+      
+      # Admin Info
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME}
+
+      # Cloudinary
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+
+      # Google Maps
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app          # Mount โค้ดเข้าไปทำงาน
+      - /app/node_modules      # แยก node_modules ออกไป ไม่ให้โดน mount ทับ (เพราะมันถูกสร้างใน container แล้ว) บอกให้ใช้ node_modules ของ Linux ในกล่องเท่านั้น
+
+  # 3. กล่อง Frontend
+  frontend:
+    build: ./frontend
+    container_name: painamnae-frontend
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
+      # ใช้ Key ตัวเดียวกับ Backend (ดึงจาก .env เหมือนกัน)
+      NUXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+
+    depends_on:
+      - backend
+
+  jenkins:
+      build: ./jenkins_setup
+      container_name: painamnae-jenkins
+      restart: always
+      user: root # ใช้ root เพื่อให้สั่ง docker ได้ง่ายๆ
+      ports:
+        - "8080:8080"   # เข้าเว็บ Jenkins
+        - "50000:50000"
+      volumes:
+        - jenkins_home:/var/jenkins_home
+        - /var/run/docker.sock:/var/run/docker.sock # หัวใจสำคัญ! ให้ Jenkins สั่ง Docker ตัวแม่ได้
+        #- /usr/bin/docker:/usr/bin/docker
+      depends_on:
+        - db
+
+# พื้นที่เก็บข้อมูลถาวรสำหรับ Database
+volumes:
+  pgdata: 
+  jenkins_home:

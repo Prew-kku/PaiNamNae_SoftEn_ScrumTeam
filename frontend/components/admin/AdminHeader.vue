@@ -127,7 +127,7 @@
                         @click="toggleProfile"
                         class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
                     >
-                        <i class="fas fa-user text-white"></i>
+                        <i class="w-6 text-lg text-center text-white fas fa-user"></i>
                     </button>
                     
                     <!-- Dropdown Menu -->
@@ -148,7 +148,7 @@
                             <div class="py-1">
                                 <a 
                                     href="/" 
-                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                     @click="openProfile = false"
                                 >
                                     Home
@@ -158,9 +158,9 @@
                                 
                                 <button
                                     @click="logout"
-                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-600 transition-colors"
                                 >
-                                    Sign out
+                                    Logout
                                 </button>
                             </div>
                         </div>
