@@ -24,7 +24,11 @@ app.use(helmet());
 
 const corsOptions = {
     origin: ['http://localhost:3001',
-        'https://amazing-crisp-9bcb1a.netlify.app'],
+        'https://amazing-crisp-9bcb1a.netlify.app'
+        'https://painamnaesoftenscrumteam-production.up.railway.app', // URL Backend ตัวเอง 
+        'http://cskkugrop3sec4.cpkku.com', 
+        'https://cskkugrop3sec4.cpkku.com' // เผื่อมี https
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
