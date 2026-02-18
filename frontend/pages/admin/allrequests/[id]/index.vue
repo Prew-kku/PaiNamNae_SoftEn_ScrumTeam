@@ -43,7 +43,7 @@
                                     class="object-cover w-16 h-16 rounded-full" alt="avatar" />
                                 <div>
                                     <div class="text-lg font-medium text-gray-900">
-                                        {{ request.user.firstName }} {{ request.user.lastName }}
+                                        {{ getUserDisplayName(request.user) }}
                                     </div>
                                     <div class="text-sm text-gray-500">@{{ request.user.username }}</div>
                                 </div>
@@ -117,6 +117,82 @@
                                     <p class="mt-1 text-gray-900 whitespace-pre-line">{{ request.ticket.description }}</p>
                                 </div>
                             </template>
+                        </div>
+                    </div>
+
+                    <div v-if="request.type === 'deletion' && request.deletion?.backupData"
+                        class="bg-white border border-gray-300 rounded-lg shadow-sm">
+                        <div class="px-4 py-4 border-b border-gray-200 sm:px-6">
+                            <h2 class="font-medium text-gray-800">ข้อมูล Backup ที่จัดเก็บ</h2>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6 p-4 sm:p-6 sm:grid-cols-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">เริ่มขอเมื่อ</label>
+                                <p class="mt-1 text-gray-900">{{ formatDate(request.deletion.backupData.initiatedAt) }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">จำนวนเส้นทางที่เก็บ</label>
+                                <p class="mt-1 text-gray-900">{{ backupDriverRouteCount }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">จำนวนการจองที่เก็บ</label>
+                                <p class="mt-1 text-gray-900">{{ backupPassengerBookingCount }}</p>
+                            </div>
+                        </div>
+
+                        <div class="px-4 pb-4 sm:px-6 sm:pb-6">
+                            <h3 class="mb-2 text-sm font-semibold text-gray-700">ตัวอย่างเส้นทางที่เก็บ (ล่าสุด)</h3>
+                            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                <table class="min-w-full text-sm">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left text-gray-600">Route ID</th>
+                                            <th class="px-3 py-2 text-left text-gray-600">ต้นทาง → ปลายทาง (จังหวัด)</th>
+                                            <th class="px-3 py-2 text-left text-gray-600">สถานะ</th>
+                                            <th class="px-3 py-2 text-left text-gray-600">สร้างเมื่อ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="r in previewDriverRoutes" :key="r.id" class="border-t border-gray-100">
+                                            <td class="px-3 py-2 text-gray-800">{{ r.id }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ routeProvinceText(r.startLocation, r.endLocation) }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ r.status || '-' }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ formatDate(r.createdAt) }}</td>
+                                        </tr>
+                                        <tr v-if="!previewDriverRoutes.length">
+                                            <td colspan="4" class="px-3 py-3 text-center text-gray-500">ไม่พบข้อมูลเส้นทาง</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="px-4 pb-4 sm:px-6 sm:pb-6">
+                            <h3 class="mb-2 text-sm font-semibold text-gray-700">ตัวอย่างการจองที่เก็บ (ล่าสุด)</h3>
+                            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                <table class="min-w-full text-sm">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left text-gray-600">Booking ID</th>
+                                            <th class="px-3 py-2 text-left text-gray-600">ต้นทาง → ปลายทาง (จังหวัด)</th>
+                                            <th class="px-3 py-2 text-left text-gray-600">สถานะ</th>
+                                            <th class="px-3 py-2 text-left text-gray-600">สร้างเมื่อ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="b in previewPassengerBookings" :key="b.id" class="border-t border-gray-100">
+                                            <td class="px-3 py-2 text-gray-800">{{ b.id }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ routeProvinceText(b.route?.startLocation, b.route?.endLocation) }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ b.status || '-' }}</td>
+                                            <td class="px-3 py-2 text-gray-700">{{ formatDate(b.createdAt) }}</td>
+                                        </tr>
+                                        <tr v-if="!previewPassengerBookings.length">
+                                            <td colspan="4" class="px-3 py-3 text-center text-gray-500">ไม่พบข้อมูลการจอง</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -197,7 +273,7 @@
             <div class="w-full max-w-md p-6 mx-4 bg-white rounded-lg shadow-xl">
                 <h3 class="mb-1 text-lg font-semibold text-gray-800">{{ modalTitle }}</h3>
                 <p class="mb-4 text-sm text-gray-500">
-                    คำร้องของ {{ request.user.firstName }} {{ request.user.lastName }}
+                    คำร้องของ {{ getUserDisplayName(request.user) }}
                 </p>
 
                 <!-- Admin Note (เฉพาะ deletion) -->
@@ -239,127 +315,56 @@ useHead({
 const isLoading = ref(false)
 const loadError = ref('')
 
-// ─── Mock Data (จะเปลี่ยนเป็น API เมื่อ backend พร้อม) ───
-const mockData = {
-    'req_1': {
-        id: 'req_1',
-        type: 'deletion',
-        status: 'pending',
-        createdAt: '2026-02-15T02:30:00Z',
-        updatedAt: '2026-02-15T02:30:00Z',
-        user: {
-            id: 'u1',
-            firstName: 'Somchai',
-            lastName: 'Jaidee',
-            email: 'somchai@example.com',
-            username: 'somchai_j',
-            role: 'PASSENGER'
-        },
-        deletion: {
-            reason: 'privacy_concern',
-            description: 'I am concerned about my personal data.'
-        }
-    },
-    'req_2': {
-        id: 'req_2',
-        type: 'deletion',
-        status: 'approved',
-        createdAt: '2026-02-14T10:00:00Z',
-        updatedAt: '2026-02-14T11:00:00Z',
-        user: {
-            id: 'u2',
-            firstName: 'Anong',
-            lastName: 'Dee',
-            email: 'anong@example.com',
-            username: 'anong_d',
-            role: 'PASSENGER'
-        },
-        deletion: {
-            reason: 'not_use_anymore',
-            description: 'I no longer use this service.',
-            adminNote: 'Account deleted successfully.',
-            reviewedAt: '2026-02-14T11:00:00Z'
-        }
-    },
-    'req_3': {
-        id: 'req_3',
-        type: 'deletion',
-        status: 'rejected',
-        createdAt: '2026-02-13T09:00:00Z',
-        updatedAt: '2026-02-13T12:00:00Z',
-        user: {
-            id: 'u3',
-            firstName: 'Preecha',
-            lastName: 'Sukjai',
-            email: 'preecha@example.com',
-            username: 'preecha_s',
-            role: 'DRIVER'
-        },
-        deletion: {
-            reason: 'other',
-            description: 'Please remove my account.',
-            adminNote: 'User has ongoing legal investigation.',
-            reviewedAt: '2026-02-13T12:00:00Z'
-        }
-    },
-    'req_4': {
-        id: 'req_4',
-        type: 'incident',
-        status: 'open',
-        createdAt: '2026-02-14T15:00:00Z',
-        updatedAt: '2026-02-14T15:00:00Z',
-        user: {
-            id: 'u4',
-            firstName: 'Suda',
-            lastName: 'Meesuk',
-            email: 'suda@example.com',
-            username: 'suda_m',
-            role: 'PASSENGER'
-        },
-        ticket: {
-            type: 'incident',
-            title: 'คนขับไม่มารับตามเวลา',
-            description: 'จองรถเวลา 08:00 แต่คนขับมาถึง 09:30',
-            replies: [
-                {
-                    id: 'reply_1',
-                    sender: { firstName: 'Admin', lastName: '' },
-                    message: 'ขอบคุณที่แจ้งครับ กำลังตรวจสอบ',
-                    createdAt: '2026-02-14T16:00:00Z'
+// ─── Real Data Fetching ───
+const config = useRuntimeConfig()
+const request = ref(null)
+
+async function fetchRequest() {
+    isLoading.value = true
+    loadError.value = ''
+    try {
+        const token = useCookie('token').value || (process.client ? localStorage.getItem('token') : '')
+        const res = await $fetch(`/deletion/admin/requests/${requestId}`, {
+            baseURL: config.public.apiBase,
+            headers: { Authorization: `Bearer ${token}` }
+        })
+
+        if (res) {
+            const latestReviewAudit = Array.isArray(res.audits)
+                ? res.audits.find((item) => item.status === 'APPROVED' || item.status === 'REJECTED')
+                : null
+            const rejectionInfo = res?.backupData?.rejection || {}
+
+            // Map API response to UI model
+            request.value = {
+                id: res.id,
+                type: 'deletion', // Currently backend only supports deletion request via this API
+                status: res.status.toLowerCase(),
+                createdAt: res.requestedAt || res.createdAt,
+                updatedAt: res.updatedAt,
+                user: res.user,
+                deletion: {
+                    reason: res.reason,
+                    description: null,
+                    backupData: res.backupData || {},
+                    adminNote: rejectionInfo.adminReason || latestReviewAudit?.reason || null,
+                    reviewedAt: latestReviewAudit?.eventTime || res.approvedAt || null,
                 }
-            ],
-            attachments: []
+            }
+        } else {
+            loadError.value = 'ไม่พบข้อมูลคำร้อง'
         }
-    },
-    'req_5': {
-        id: 'req_5',
-        type: 'behavior',
-        status: 'in_progress',
-        createdAt: '2026-02-12T11:00:00Z',
-        updatedAt: '2026-02-13T08:00:00Z',
-        user: {
-            id: 'u5',
-            firstName: 'Wichai',
-            lastName: 'Tongdee',
-            email: 'wichai@example.com',
-            username: 'wichai_t',
-            role: 'PASSENGER'
-        },
-        ticket: {
-            type: 'behavior',
-            title: 'คนขับพูดจาไม่สุภาพ',
-            description: 'คนขับใช้คำพูดไม่เหมาะสมระหว่างเดินทาง',
-            replies: [],
-            attachments: []
-        }
+    } catch (err) {
+        console.error(err)
+        loadError.value = 'ไม่สามารถโหลดข้อมูลได้ หรือคำร้องถูกลบแล้ว'
+    } finally {
+        isLoading.value = false
     }
 }
 
-const request = ref(mockData[requestId] || null)
-
-if (!request.value) {
-    loadError.value = 'ไม่พบคำร้องนี้'
-}
+onMounted(() => {
+    fetchRequest()
+})
 
 // ─── Helpers ───
 function roleBadge(role) {
@@ -399,14 +404,7 @@ function reasonBadge(reason) {
 }
 
 function reasonLabel(reason) {
-    const map = {
-        'privacy_concern': 'ความเป็นส่วนตัว',
-        'not_use_anymore': 'ไม่ใช้บริการแล้ว',
-        'found_better_service': 'พบบริการที่ดีกว่า',
-        'too_expensive': 'ราคาแพงเกินไป',
-        'other': 'อื่น ๆ'
-    }
-    return map[reason] || map['other']
+    return reason || 'ไม่ระบุ'
 }
 
 // RequestStatus: pending | approved | rejected | open | in_progress | resolved | closed
@@ -415,10 +413,8 @@ function statusBadge(status) {
         'pending': 'bg-yellow-100 text-yellow-700',
         'approved': 'bg-green-100 text-green-700',
         'rejected': 'bg-red-100 text-red-700',
-        'open': 'bg-blue-100 text-blue-700',
-        'in_progress': 'bg-indigo-100 text-indigo-700',
-        'resolved': 'bg-green-100 text-green-700',
-        'closed': 'bg-gray-100 text-gray-600'
+        'cancelled': 'bg-gray-100 text-gray-600',
+        'deleted': 'bg-slate-200 text-slate-700'
     }
     return map[status] || 'bg-gray-100 text-gray-700'
 }
@@ -428,13 +424,35 @@ function statusLabel(status) {
         'pending': 'รอดำเนินการ',
         'approved': 'อนุมัติแล้ว',
         'rejected': 'ปฏิเสธแล้ว',
-        'open': 'เปิด',
-        'in_progress': 'กำลังดำเนินการ',
-        'resolved': 'แก้ไขแล้ว',
-        'closed': 'ปิดแล้ว'
+        'cancelled': 'ยกเลิกแล้ว',
+        'deleted': 'ลบ/นิรนามแล้ว'
     }
     return map[status] || status
 }
+
+const backupDriverRouteCount = computed(() => {
+    const summary = request.value?.deletion?.backupData?.transitionSummary?.travelRouteSnapshotSummary
+    if (summary?.driverRouteCount != null) return summary.driverRouteCount
+    const routes = request.value?.deletion?.backupData?.travelRouteSnapshot?.driverRoutes
+    return Array.isArray(routes) ? routes.length : 0
+})
+
+const backupPassengerBookingCount = computed(() => {
+    const summary = request.value?.deletion?.backupData?.transitionSummary?.travelRouteSnapshotSummary
+    if (summary?.passengerBookingCount != null) return summary.passengerBookingCount
+    const bookings = request.value?.deletion?.backupData?.travelRouteSnapshot?.passengerBookings
+    return Array.isArray(bookings) ? bookings.length : 0
+})
+
+const previewDriverRoutes = computed(() => {
+    const routes = request.value?.deletion?.backupData?.travelRouteSnapshot?.driverRoutes
+    return Array.isArray(routes) ? routes.slice(0, 5) : []
+})
+
+const previewPassengerBookings = computed(() => {
+    const bookings = request.value?.deletion?.backupData?.travelRouteSnapshot?.passengerBookings
+    return Array.isArray(bookings) ? bookings.slice(0, 5) : []
+})
 
 function formatDate(iso) {
     if (!iso) return '-'
@@ -445,6 +463,40 @@ function formatDate(iso) {
         hour: '2-digit',
         minute: '2-digit'
     })
+}
+
+function getUserDisplayName(user) {
+    if (!user) return '-'
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    return fullName || user.username || user.email || user.id || '-'
+}
+
+function extractProvince(location) {
+    if (!location || typeof location !== 'object') return '-'
+
+    const raw = [location.province, location.address, location.name]
+        .filter(Boolean)
+        .map(String)
+        .join(', ')
+
+    if (!raw) return '-'
+
+    const explicitProvince = raw.match(/จังหวัด\s*([ก-๙A-Za-z\s]+)/)
+    if (explicitProvince?.[1]) return `จังหวัด${explicitProvince[1].trim()}`
+
+    if (raw.includes('กรุงเทพมหานคร')) return 'กรุงเทพมหานคร'
+
+    const parts = raw
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean)
+
+    if (parts.length) return parts[parts.length - 1]
+    return '-'
+}
+
+function routeProvinceText(startLocation, endLocation) {
+    return `${extractProvince(startLocation)} → ${extractProvince(endLocation)}`
 }
 
 // ─── Confirm Modal ───

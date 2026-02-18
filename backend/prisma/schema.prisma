@@ -77,6 +77,7 @@ model User {
   role                  Role     @default(PASSENGER)
   isVerified            Boolean  @default(false)
   isActive              Boolean  @default(true)
+  deletionPending       Boolean  @default(false)
   otpCode               String?
   lastLogin             DateTime?
   createdAt             DateTime @default(now())
@@ -88,6 +89,7 @@ model User {
   notification          Notification[]
   createdRoutes         Route[]             @relation("DriverRoutes")
   bookings              Booking[]           @relation("PassengerBookings")
+  deletionRequests      DeletionRequest[]
 
   @@index([role])
   @@index([isActive])
@@ -210,4 +212,56 @@ model Booking {
   pickupLocation  Json          @db.Json
   dropoffLocation Json          @db.Json
   createdAt       DateTime      @default(now())
+}
+
+enum DeletionStatus {
+  PENDING         // รอ Admin อนุมัติ
+  APPROVED        // อนุมัติแล้ว รอครบ 90 วัน
+  CANCELLED       // ผู้ใช้ยกเลิกคำขอลบ
+  REJECTED        // ปฏิเสธ 
+  DELETED         // ประมวลผลลบ/ทำให้นิรนามแล้ว
+}
+
+enum DeletionAuditStatus {
+  REQUESTED
+  CANCELLED
+  APPROVED
+  REJECTED
+  ANONYMIZED
+  DELETED
+}
+
+model DeletionRequest {
+  id                String         @id @default(cuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason            String?        
+  backupData        Json           @db.Json // เก็บข้อมูลทั้งหมดของบัญชีตอนที่ขอลบ
+  status            DeletionStatus @default(PENDING)
+  requestedAt       DateTime       @default(now())
+  approvedAt        DateTime?
+  scheduledDeleteAt DateTime?      // วันที่จะ Hard Delete
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  audits            DeletionAudit[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([requestedAt])
+}
+model DeletionAudit {
+  id              String              @id @default(cuid())
+  requestId       String?
+  request         DeletionRequest?    @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  originalUserId  String              // เก็บ ID เดิมไว้อ้างอิง
+  originalEmail   String?             // เก็บ Email เดิม 
+  eventTime       DateTime            @default(now())
+  reason          String?
+  status          DeletionAuditStatus
+  performedBy     String?             // 'USER' | 'ADMIN' | 'SYSTEM_CRON'
+  backupData      Json?               @db.Json
+
+  @@index([requestId])
+  @@index([status])
+  @@index([eventTime])
 }
