@@ -217,7 +217,8 @@ model Booking {
 enum DeletionStatus {
   PENDING         // รอ Admin อนุมัติ
   APPROVED        // อนุมัติแล้ว รอครบ 90 วัน
-  REJECTED        // ปฏิเสธ (เก็บถาวร)
+  CANCELLED       // ผู้ใช้ยกเลิกคำขอลบ
+  REJECTED        // ปฏิเสธ 
 }
 
 model DeletionRequest {

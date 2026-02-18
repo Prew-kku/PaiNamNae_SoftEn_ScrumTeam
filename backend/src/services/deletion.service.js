@@ -60,15 +60,18 @@ const requestDeletion = async (userId, password, reason) => {
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) throw new ApiError(401, "Incorrect password");
 
-    // 3. ตรวจสอบคำขอค้าง (Prevent Double Request)
-    const existingRequest = await prisma.deletionRequest.findFirst({
-        where: {
-            userId,
-            status: "PENDING",
-        },
+    // 3. ตรวจสอบคำขอเดิม (เพื่อรองรับการเก็บประวัติและ re-request)
+    const existingRequest = await prisma.deletionRequest.findUnique({
+        where: { userId },
     });
 
-    if (existingRequest) throw new ApiError(400, "Deletion request already pending");
+    if (existingRequest?.status === "PENDING") {
+        throw new ApiError(400, "Deletion request already pending");
+    }
+
+    if (existingRequest?.status === "APPROVED") {
+        throw new ApiError(400, "Deletion request already approved");
+    }
 
     // 4. ดำเนินการ Suspend User และสร้าง Request
     // ใช้ Transaction เพื่อความถูกต้องของข้อมูล
@@ -82,21 +85,49 @@ const requestDeletion = async (userId, password, reason) => {
             }
         });
 
-        // สร้าง DeletionRequest สถานะ PENDING
-        await tx.deletionRequest.create({
-            data: {
-                userId,
-                reason,
-                status: "PENDING",
-                approvedAt: null,
-                scheduledDeleteAt: null,
-                backupData: {
-                    initiatedAt: new Date(),
-                    containsPersonalData: false,
-                    note: "Minimal retention metadata only"
+        const initiatedAt = new Date();
+
+        if (existingRequest) {
+            const previousBackupData =
+                existingRequest.backupData && typeof existingRequest.backupData === "object"
+                    ? existingRequest.backupData
+                    : {};
+
+            await tx.deletionRequest.update({
+                where: { userId },
+                data: {
+                    reason,
+                    status: "PENDING",
+                    requestedAt: initiatedAt,
+                    approvedAt: null,
+                    scheduledDeleteAt: null,
+                    backupData: {
+                        ...previousBackupData,
+                        latestRequest: {
+                            initiatedAt,
+                            sourceStatus: existingRequest.status,
+                            containsPersonalData: false,
+                        },
+                    },
+                },
+            });
+        } else {
+            // สร้าง DeletionRequest สถานะ PENDING
+            await tx.deletionRequest.create({
+                data: {
+                    userId,
+                    reason,
+                    status: "PENDING",
+                    approvedAt: null,
+                    scheduledDeleteAt: null,
+                    backupData: {
+                        initiatedAt,
+                        containsPersonalData: false,
+                        note: "Minimal retention metadata only"
+                    }
                 }
-            }
-        });
+            });
+        }
     });
 
     return {
@@ -107,14 +138,18 @@ const requestDeletion = async (userId, password, reason) => {
 };
 
 const cancelDeletionByUser = async (userId) => {
-    const request = await prisma.deletionRequest.findFirst({
-        where: {
-            userId,
-            status: "PENDING",
-        },
-    });
+    const now = new Date();
+    const request = await prisma.deletionRequest.findUnique({ where: { userId } });
 
-    if (!request) throw new ApiError(404, "No pending deletion request found");
+    if (!request || !["PENDING", "APPROVED"].includes(request.status)) {
+        throw new ApiError(404, "No cancellable deletion request found");
+    }
+
+    if (request.status === "APPROVED") {
+        if (!request.scheduledDeleteAt || request.scheduledDeleteAt <= now) {
+            throw new ApiError(400, "Cannot cancel deletion after retention period has ended");
+        }
+    }
 
     await prisma.$transaction(async (tx) => {
         await tx.user.update({
@@ -125,12 +160,31 @@ const cancelDeletionByUser = async (userId) => {
             },
         });
 
-        await tx.deletionRequest.delete({
+        const existingBackupData = request.backupData && typeof request.backupData === "object"
+            ? request.backupData
+            : {};
+
+        await tx.deletionRequest.update({
             where: { id: request.id },
+            data: {
+                status: "CANCELLED",
+                backupData: {
+                    ...existingBackupData,
+                    cancellation: {
+                        cancelledAt: now,
+                        cancelledBy: "USER",
+                        previousStatus: request.status,
+                        containsPersonalData: false,
+                    },
+                },
+            },
         });
     });
 
-    return { message: "Deletion request cancelled. Account reactivated." };
+    return {
+        message: "Deletion request cancelled. Account reactivated.",
+        cancelledStatus: request.status,
+    };
 };
 
 const getAllDeletionRequests = async () => {
@@ -223,13 +277,27 @@ const rejectDeletion = async (requestId) => {
             }
         });
 
-        // ลบคำขอทิ้ง
-        await tx.deletionRequest.delete({
-            where: { id: requestId }
+        const existingBackupData = request.backupData && typeof request.backupData === "object"
+            ? request.backupData
+            : {};
+
+        await tx.deletionRequest.update({
+            where: { id: requestId },
+            data: {
+                status: "REJECTED",
+                backupData: {
+                    ...existingBackupData,
+                    rejection: {
+                        rejectedAt: new Date(),
+                        rejectedBy: "ADMIN",
+                        containsPersonalData: false,
+                    },
+                },
+            },
         });
     });
 
-    return { message: "Deletion request rejected. Account reactivated." };
+    return { message: "Deletion request rejected and retained for audit. Account reactivated." };
 };
 
 module.exports = {
