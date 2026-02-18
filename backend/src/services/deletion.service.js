@@ -45,6 +45,8 @@ const getApprovalBlockers = async (userId) => {
     };
 };
 
+const buildAuditUserRef = (userId) => `user_${userId}`;
+
 const requestDeletion = async (userId, password, reason) => {
     // 1. ตรวจสอบ User
     const user = await prisma.user.findUnique({
@@ -60,9 +62,13 @@ const requestDeletion = async (userId, password, reason) => {
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) throw new ApiError(401, "Incorrect password");
 
-    // 3. ตรวจสอบคำขอเดิม (เพื่อรองรับการเก็บประวัติและ re-request)
-    const existingRequest = await prisma.deletionRequest.findUnique({
-        where: { userId },
+    // 3. ตรวจสอบคำขอที่ยัง active (รองรับการเก็บประวัติหลายแถว)
+    const existingRequest = await prisma.deletionRequest.findFirst({
+        where: {
+            userId,
+            status: { in: ["PENDING", "APPROVED"] },
+        },
+        orderBy: { requestedAt: "desc" },
     });
 
     if (existingRequest?.status === "PENDING") {
@@ -76,6 +82,46 @@ const requestDeletion = async (userId, password, reason) => {
     // 4. ดำเนินการ Suspend User และสร้าง Request
     // ใช้ Transaction เพื่อความถูกต้องของข้อมูล
     await prisma.$transaction(async (tx) => {
+        const requestedAt = new Date();
+
+        const passengerBookingTransition = await tx.booking.groupBy({
+            by: ["status"],
+            where: { passengerId: userId },
+            _count: { _all: true },
+        });
+
+        const driverRouteTransition = await tx.route.groupBy({
+            by: ["status"],
+            where: { driverId: userId },
+            _count: { _all: true },
+            _sum: { availableSeats: true },
+        });
+
+        const passengerBookingDeleteResult = await tx.booking.deleteMany({
+            where: { passengerId: userId },
+        });
+
+        const driverRouteDeleteResult = await tx.route.deleteMany({
+            where: { driverId: userId },
+        });
+
+        const transitionSummary = {
+            bookingByStatus: passengerBookingTransition.map((item) => ({
+                status: item.status,
+                count: item._count?._all || 0,
+            })),
+            routeByStatus: driverRouteTransition.map((item) => ({
+                status: item.status,
+                count: item._count?._all || 0,
+                totalAvailableSeats: item._sum?.availableSeats || 0,
+            })),
+            deletedAtRequestTime: {
+                passengerBookingCount: passengerBookingDeleteResult.count,
+                driverRouteCount: driverRouteDeleteResult.count,
+            },
+            containsPersonalData: false,
+        };
+
         // ตั้ง isActive = false (Login ไม่ได้, สมัครใหม่ด้วย Email เดิมไม่ได้เพราะติด Unique Constraint)
         await tx.user.update({
             where: { id: userId },
@@ -85,49 +131,38 @@ const requestDeletion = async (userId, password, reason) => {
             }
         });
 
-        const initiatedAt = new Date();
-
-        if (existingRequest) {
-            const previousBackupData =
-                existingRequest.backupData && typeof existingRequest.backupData === "object"
-                    ? existingRequest.backupData
-                    : {};
-
-            await tx.deletionRequest.update({
-                where: { userId },
-                data: {
-                    reason,
-                    status: "PENDING",
-                    requestedAt: initiatedAt,
-                    approvedAt: null,
-                    scheduledDeleteAt: null,
-                    backupData: {
-                        ...previousBackupData,
-                        latestRequest: {
-                            initiatedAt,
-                            sourceStatus: existingRequest.status,
-                            containsPersonalData: false,
-                        },
-                    },
-                },
-            });
-        } else {
-            // สร้าง DeletionRequest สถานะ PENDING
-            await tx.deletionRequest.create({
-                data: {
-                    userId,
-                    reason,
-                    status: "PENDING",
-                    approvedAt: null,
-                    scheduledDeleteAt: null,
-                    backupData: {
-                        initiatedAt,
-                        containsPersonalData: false,
-                        note: "Minimal retention metadata only"
-                    }
+        // สร้าง DeletionRequest เป็นแถวใหม่ทุกครั้ง เพื่อเก็บประวัติย้อนหลัง
+        const deletionRequest = await tx.deletionRequest.create({
+            data: {
+                userId,
+                reason,
+                status: "PENDING",
+                approvedAt: null,
+                scheduledDeleteAt: null,
+                backupData: {
+                    initiatedAt: requestedAt,
+                    transitionSummary,
+                    containsPersonalData: false,
+                    note: "Minimal retention metadata only"
                 }
-            });
-        }
+            }
+        });
+
+        await tx.deletionAudit.create({
+            data: {
+                requestId: deletionRequest.id,
+                originalUserId: buildAuditUserRef(userId),
+                originalEmail: null,
+                eventTime: requestedAt,
+                reason,
+                status: "REQUESTED",
+                performedBy: "USER",
+                backupData: {
+                    transitionSummary,
+                    containsPersonalData: false,
+                },
+            },
+        });
     });
 
     return {
@@ -139,7 +174,13 @@ const requestDeletion = async (userId, password, reason) => {
 
 const cancelDeletionByUser = async (userId) => {
     const now = new Date();
-    const request = await prisma.deletionRequest.findUnique({ where: { userId } });
+    const request = await prisma.deletionRequest.findFirst({
+        where: {
+            userId,
+            status: { in: ["PENDING", "APPROVED"] },
+        },
+        orderBy: { requestedAt: "desc" },
+    });
 
     if (!request || !["PENDING", "APPROVED"].includes(request.status)) {
         throw new ApiError(404, "No cancellable deletion request found");
@@ -176,6 +217,22 @@ const cancelDeletionByUser = async (userId) => {
                         previousStatus: request.status,
                         containsPersonalData: false,
                     },
+                },
+            },
+        });
+
+        await tx.deletionAudit.create({
+            data: {
+                requestId: request.id,
+                originalUserId: buildAuditUserRef(userId),
+                originalEmail: null,
+                eventTime: now,
+                reason: request.reason,
+                status: "CANCELLED",
+                performedBy: "USER",
+                backupData: {
+                    previousStatus: request.status,
+                    containsPersonalData: false,
                 },
             },
         });
@@ -233,23 +290,42 @@ const approveDeletion = async (requestId) => {
         ? request.backupData
         : {};
 
-    await prisma.deletionRequest.update({
-        where: { id: requestId },
-        data: {
-            status: "APPROVED",
-            approvedAt,
-            scheduledDeleteAt,
-            backupData: {
-                ...existingBackupData,
-                approvedContext: {
-                    role: user.role,
-                    approvedBy: "ADMIN",
+    await prisma.$transaction(async (tx) => {
+        await tx.deletionRequest.update({
+            where: { id: requestId },
+            data: {
+                status: "APPROVED",
+                approvedAt,
+                scheduledDeleteAt,
+                backupData: {
+                    ...existingBackupData,
+                    approvedContext: {
+                        role: user.role,
+                        approvedBy: "ADMIN",
+                        gracePeriodDays,
+                        containsPersonalData: false,
+                    },
+                    precheck: summary,
+                },
+            },
+        });
+
+        await tx.deletionAudit.create({
+            data: {
+                requestId,
+                originalUserId: buildAuditUserRef(userId),
+                originalEmail: null,
+                eventTime: approvedAt,
+                reason: request.reason,
+                status: "APPROVED",
+                performedBy: "ADMIN",
+                backupData: {
                     gracePeriodDays,
+                    scheduledDeleteAt,
                     containsPersonalData: false,
                 },
-                precheck: summary,
             },
-        },
+        });
     });
 
     return {
@@ -268,6 +344,7 @@ const rejectDeletion = async (requestId) => {
     if (!request) throw new ApiError(404, "Request not found");
 
     await prisma.$transaction(async (tx) => {
+        const rejectedAt = new Date();
         // เปิดใช้งานให้ User อีกครั้ง
         await tx.user.update({
             where: { id: request.userId },
@@ -288,10 +365,25 @@ const rejectDeletion = async (requestId) => {
                 backupData: {
                     ...existingBackupData,
                     rejection: {
-                        rejectedAt: new Date(),
+                        rejectedAt,
                         rejectedBy: "ADMIN",
                         containsPersonalData: false,
                     },
+                },
+            },
+        });
+
+        await tx.deletionAudit.create({
+            data: {
+                requestId,
+                originalUserId: buildAuditUserRef(request.userId),
+                originalEmail: null,
+                eventTime: rejectedAt,
+                reason: request.reason,
+                status: "REJECTED",
+                performedBy: "ADMIN",
+                backupData: {
+                    containsPersonalData: false,
                 },
             },
         });

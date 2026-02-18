@@ -4,6 +4,8 @@ const prisma = require("./prisma");
 const crypto = require("crypto");
 const { deleteFromCloudinary } = require("./cloudinary");
 
+const REDACTED_LOCATION = { redacted: true, scope: "PDPA_RETENTION_90D" };
+
 const getCloudinaryPublicIdFromUrl = (urlString) => {
     if (!urlString || typeof urlString !== "string") return null;
 
@@ -89,17 +91,60 @@ const initCronJobs = () => {
                 const cloudinaryPublicIds = [...new Set(cloudinaryUrls.map(getCloudinaryPublicIdFromUrl).filter(Boolean))];
 
                 await prisma.$transaction(async (tx) => {
+                    const redactedDriverRoutes = await tx.route.updateMany({
+                        where: { driverId: req.userId },
+                        data: {
+                            startLocation: REDACTED_LOCATION,
+                            endLocation: REDACTED_LOCATION,
+                            conditions: null,
+                            routePolyline: null,
+                            distanceMeters: null,
+                            durationSeconds: null,
+                            routeSummary: null,
+                            distance: null,
+                            duration: null,
+                            waypoints: null,
+                            landmarks: null,
+                            steps: null,
+                        },
+                    });
+
+                    const redactedPassengerBookings = await tx.booking.updateMany({
+                        where: { passengerId: req.userId },
+                        data: {
+                            pickupLocation: REDACTED_LOCATION,
+                            dropoffLocation: REDACTED_LOCATION,
+                            cancelReason: null,
+                        },
+                    });
+
+                    const redactedBookingsOnOwnedRoutes = await tx.booking.updateMany({
+                        where: {
+                            route: {
+                                driverId: req.userId,
+                            },
+                        },
+                        data: {
+                            pickupLocation: REDACTED_LOCATION,
+                            dropoffLocation: REDACTED_LOCATION,
+                        },
+                    });
+
                     await tx.deletionAudit.create({
                         data: {
+                            requestId: req.id,
                             originalUserId: createDeletionAuditRef(req.userId, req.id),
                             originalEmail: null,
                             reason: req.reason,
-                            status: "COMPLETED",
+                            status: "ANONYMIZED",
                             performedBy: "SYSTEM_CRON",
                             backupData: {
                                 evidenceType: "IRREVERSIBLE_ANONYMIZATION",
                                 retentionDays: 90,
                                 cloudinaryAssetCount: cloudinaryPublicIds.length,
+                                routeRedactedCount: redactedDriverRoutes.count,
+                                bookingPassengerRedactedCount: redactedPassengerBookings.count,
+                                bookingRouteRedactedCount: redactedBookingsOnOwnedRoutes.count,
                                 containsPersonalData: false,
                             }
                         }
@@ -129,8 +174,26 @@ const initCronJobs = () => {
                         },
                     });
 
-                    await tx.deletionRequest.delete({
+                    await tx.deletionRequest.update({
                         where: { id: req.id },
+                        data: {
+                            status: "DELETED",
+                            scheduledDeleteAt: now,
+                        },
+                    });
+
+                    await tx.deletionAudit.create({
+                        data: {
+                            requestId: req.id,
+                            originalUserId: createDeletionAuditRef(req.userId, req.id),
+                            originalEmail: null,
+                            reason: req.reason,
+                            status: "DELETED",
+                            performedBy: "SYSTEM_CRON",
+                            backupData: {
+                                containsPersonalData: false,
+                            },
+                        }
                     });
                 });
 
