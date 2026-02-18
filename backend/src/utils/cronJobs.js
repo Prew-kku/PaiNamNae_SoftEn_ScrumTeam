@@ -2,6 +2,36 @@
 const cron = require("node-cron");
 const prisma = require("./prisma");
 const crypto = require("crypto");
+const { deleteFromCloudinary } = require("./cloudinary");
+
+const getCloudinaryPublicIdFromUrl = (urlString) => {
+    if (!urlString || typeof urlString !== "string") return null;
+
+    try {
+        const url = new URL(urlString);
+        const marker = "/upload/";
+        const uploadIndex = url.pathname.indexOf(marker);
+        if (uploadIndex === -1) return null;
+
+        let publicPath = url.pathname.slice(uploadIndex + marker.length);
+        publicPath = publicPath.replace(/^v\d+\//, "");
+        publicPath = publicPath.replace(/\.[^/.]+$/, "");
+        publicPath = decodeURIComponent(publicPath);
+
+        return publicPath || null;
+    } catch (error) {
+        return null;
+    }
+};
+
+const createDeletionAuditRef = (userId, requestId) => {
+    const secret = process.env.DELETION_AUDIT_HASH_SECRET || "deletion-audit-default-pepper";
+    return crypto
+        .createHmac("sha256", secret)
+        .update(`${userId}:${requestId}`)
+        .digest("hex")
+        .slice(0, 32);
+};
 
 const initCronJobs = () => {
     // รันทุกเที่ยงคืน (00:00)
@@ -22,8 +52,23 @@ const initCronJobs = () => {
 
         for (const req of expiredRequests) {
             try {
-                // 1. สร้าง Audit Log ว่าได้ลบจริงแล้ว
-                const originalData = req.backupData?.userProfile || {};
+                // 1. เตรียม anonymized identity แบบไม่สามารถระบุตัวตนเดิมได้
+                const user = await prisma.user.findUnique({
+                    where: { id: req.userId },
+                    select: {
+                        profilePicture: true,
+                        nationalIdPhotoUrl: true,
+                        selfiePhotoUrl: true,
+                    },
+                });
+
+                const driverVerifications = await prisma.driverVerification.findMany({
+                    where: { userId: req.userId },
+                    select: {
+                        licensePhotoUrl: true,
+                        selfiePhotoUrl: true,
+                    },
+                });
 
                 const emailHash = crypto
                     .createHash("sha256")
@@ -31,18 +76,32 @@ const initCronJobs = () => {
                     .digest("hex")
                     .slice(0, 24);
 
-                const anonymizedUsername = `deleted_${req.userId.slice(-10)}`;
+                const anonymizedUsername = `deleted_${emailHash.slice(0, 12)}`;
                 const anonymizedEmail = `deleted+${emailHash}@deleted.local`;
+
+                const cloudinaryUrls = [
+                    user?.profilePicture,
+                    user?.nationalIdPhotoUrl,
+                    user?.selfiePhotoUrl,
+                    ...driverVerifications.flatMap((item) => [item.licensePhotoUrl, item.selfiePhotoUrl]),
+                ].filter(Boolean);
+
+                const cloudinaryPublicIds = [...new Set(cloudinaryUrls.map(getCloudinaryPublicIdFromUrl).filter(Boolean))];
 
                 await prisma.$transaction(async (tx) => {
                     await tx.deletionAudit.create({
                         data: {
-                            originalUserId: req.userId,
-                            originalEmail: originalData.email || "unknown",
+                            originalUserId: createDeletionAuditRef(req.userId, req.id),
+                            originalEmail: null,
                             reason: req.reason,
                             status: "COMPLETED",
                             performedBy: "SYSTEM_CRON",
-                            backupData: req.backupData
+                            backupData: {
+                                evidenceType: "IRREVERSIBLE_ANONYMIZATION",
+                                retentionDays: 90,
+                                cloudinaryAssetCount: cloudinaryPublicIds.length,
+                                containsPersonalData: false,
+                            }
                         }
                     });
 
@@ -74,6 +133,14 @@ const initCronJobs = () => {
                         where: { id: req.id },
                     });
                 });
+
+                for (const publicId of cloudinaryPublicIds) {
+                    try {
+                        await deleteFromCloudinary(publicId);
+                    } catch (error) {
+                        console.error(`Failed to delete Cloudinary asset ${publicId}:`, error.message);
+                    }
+                }
 
                 console.log(`Anonymized user ${req.userId}`);
 

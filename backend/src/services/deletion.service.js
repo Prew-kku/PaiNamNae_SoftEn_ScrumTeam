@@ -4,10 +4,9 @@ const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
 
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "CONFIRMED"];
+const DELETION_GRACE_DAYS = 90;
 const getGracePeriodDays = () => {
-    const days = Number(process.env.ACCOUNT_DELETION_GRACE_DAYS || 30);
-    if (Number.isNaN(days)) return 30;
-    return Math.min(30, Math.max(7, days));
+    return DELETION_GRACE_DAYS;
 };
 
 const addDays = (date, days) => {
@@ -91,10 +90,10 @@ const requestDeletion = async (userId, password, reason) => {
                 status: "PENDING",
                 approvedAt: null,
                 scheduledDeleteAt: null,
-                // backupData
                 backupData: {
                     initiatedAt: new Date(),
-                    note: "Waiting for admin approval to perform full backup"
+                    containsPersonalData: false,
+                    note: "Minimal retention metadata only"
                 }
             }
         });
@@ -161,10 +160,7 @@ const approveDeletion = async (requestId) => {
         where: { id: userId },
         select: {
             id: true,
-            username: true,
-            email: true,
             role: true,
-            createdAt: true,
         },
     });
 
@@ -191,12 +187,11 @@ const approveDeletion = async (requestId) => {
             scheduledDeleteAt,
             backupData: {
                 ...existingBackupData,
-                userProfile: {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email,
+                approvedContext: {
                     role: user.role,
-                    createdAt: user.createdAt,
+                    approvedBy: "ADMIN",
+                    gracePeriodDays,
+                    containsPersonalData: false,
                 },
                 precheck: summary,
             },
