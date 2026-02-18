@@ -22,8 +22,14 @@ const cancelDeletion = catchAsync(async (req, res) => {
 });
 
 const getRequests = catchAsync(async (req, res) => {
-    const requests = await deletionService.getAllDeletionRequests();
+    const requests = await deletionService.getAllDeletionRequests(req.query || {});
     res.status(200).json(requests);
+});
+
+const getRequestById = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const request = await deletionService.getDeletionRequestById(id);
+    res.status(200).json(request);
 });
 
 const approveRequest = catchAsync(async (req, res) => {
@@ -34,7 +40,8 @@ const approveRequest = catchAsync(async (req, res) => {
 
 const rejectRequest = catchAsync(async (req, res) => {
     const { id } = req.params;
-    const result = await deletionService.rejectDeletion(id);
+    const { adminReason } = req.body || {};
+    const result = await deletionService.rejectDeletion(id, adminReason);
     res.status(200).json(result);
 });
 
@@ -42,6 +49,7 @@ module.exports = {
     requestDeletion,
     cancelDeletion,
     getRequests,
+    getRequestById,
     approveRequest,
     rejectRequest,
 };
