@@ -3,8 +3,8 @@
     <transition name="modal-fade">
         <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
             <form
-            @submit.prevent="handleSubmit"
-            <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 bg-white rounded-lg shadow-xl">
+                @submit.prevent="handleSubmit"
+                class="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 bg-white rounded-lg shadow-xl"
             >
                 <!-- Header -->
                 <div class="mb-4">
@@ -21,7 +21,8 @@
                     </label>
                     <select v-model="selectedReason"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        :class="{ 'border-red-500': showError && !selectedReason }">
+                        :class="{ 'border-red-500': showError && !selectedReason }"
+                    >
                         <option value="" disabled>-- เลือกเหตุผล --</option>
                         <option v-for="reason in reasons" :key="reason.value" :value="reason.label">
                             {{ reason.label }}
@@ -54,7 +55,7 @@
                             <ul class="mt-2 space-y-1 text-sm text-red-700">
                                 <li>• การลบข้อมูลนี้เป็นการลบถาวรและไม่สามารถกู้คืนได้</li>
                                 <li>• บัญชีของคุณจะถูกปิดการใช้งานทันที</li>
-                                <li>• ข้อมูลทั้งหมดจะถูกลบภายใน 90 วันตามกฎหมาย</li>
+                                <li>• ข้อมูลที่เป็นข้อมูลส่วนบุคคลจะถูกลบ/ทำให้ระบุตัวตนไม่ได้ภายใน 7–30 วัน</li>
                             </ul>
                         </div>
                     </div>
@@ -157,9 +158,9 @@ const handleSubmit = () => {
     isSubmitting.value = true
 
     // รวมเหตุผลกับรายละเอียด
-    const fullReason = additionalDetails.value 
-        ? `${selectedReason.value} - ${additionalDetails.value}` 
-        : selectedReason.value
+    const fullReason = selectedReason.value && additionalDetails.value
+        ? `${selectedReason.value} - ${additionalDetails.value}`
+        : selectedReason.value || additionalDetails.value || null
 
     const requestData = {
         password: password.value,
