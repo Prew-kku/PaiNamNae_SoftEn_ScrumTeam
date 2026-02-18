@@ -49,7 +49,14 @@ const { login } = useAuth()
 const submit = async () => {
   errorMessage.value = ''
   try {
-    await login(identifier.value, password.value)
+    const res = await login(identifier.value, password.value)
+    const userData = res?.user || res?.data?.user
+
+    if (userData?.deletionPending) {
+      router.push('/deletion/cancel')
+      return
+    }
+
     router.push('/')
   } catch (e) {
     console.error(e)

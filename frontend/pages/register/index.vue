@@ -26,11 +26,11 @@
           <div class="mb-4">
             <label for="username" class="block mb-1 text-sm font-medium text-gray-700">ชื่อผู้ใช้ <span
                 class="text-red-500">*</span></label>
-            <input type="text" id="username" v-model="formData.username" placeholder="example123"
+            <input type="text" id="username" v-model="formData.username" placeholder="example_123"
               class="w-full px-4 py-2 transition border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               :class="{ 'border-red-500 ring-1 ring-red-500': errors.username }">
             <p v-if="errors.username" class="mt-1 text-xs text-red-600">{{ errors.username }}</p>
-            <p v-else class="mt-1 text-xs text-gray-500">ความยาว 4–20 ตัวอักษร ภาษาอังกฤษ ตัวเลข หรือขีดล่าง (_)
+            <p v-else class="mt-1 text-xs text-gray-500">ความยาวอย่างน้อย 4 ตัวอักษร ภาษาอังกฤษ ตัวเลข หรือขีดล่าง (_)
               เท่านั้น</p>
           </div>
           <div class="mb-4">
@@ -349,7 +349,7 @@ const prevStep = () => {
 };
 
 // ===== Helpers (same behavior as admin create) =====
-const apiBase = useRuntimeConfig().public.apiBase || 'http://localhost:3000/api';
+const apiBase = useRuntimeConfig().public.apiBase ;
 
 async function postForm(url, formData, token = '') {
   const res = await fetch(url, {

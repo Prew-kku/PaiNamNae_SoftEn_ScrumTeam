@@ -142,11 +142,30 @@
                                     {{ isLoading ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง' }}
                                 </button>
                             </div>
+
+                            <!-- ส่วนขอลบข้อมูล Thongchai5956 -->
+                            <div v-if="originalUserData?.role !== 'ADMIN'" class="pt-6 mt border-t border-gray-200">                 
+                                <div class="flex justify-center md:justify-end mt-4">
+                                    <button @click="openDeleteModal" type="button"
+                                        class="px-6 py-2 text-sm font-semibold text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                        ลบบัญชี
+                                    </button>
+                                </div>
+                            </div>           
+
                         </form>
                     </div>
                 </main>
             </div>
         </div>
+
+        <!-- Thongchai5956 -->
+        <DeleteAccountRequestModal
+            :show="showDeleteModal"
+            @close="closeDeleteModal"
+            @confirm="handleDeleteRequest"
+        />
+
     </div>
 </template>
 
@@ -157,6 +176,9 @@ import { useToast } from '~/composables/useToast';
 import ProfileSidebar from '~/components/ProfileSidebar.vue';
 import dayjs from 'dayjs'
 import 'dayjs/locale/th'
+// Thongchai595-6
+import DeleteAccountRequestModal from '~/components/DeleteAccountRequestModal.vue'
+
 
 dayjs.locale('th')
 
@@ -165,7 +187,8 @@ definePageMeta({
 });
 
 const { $api } = useNuxtApp()
-const { user: userCookie } = useAuth()
+//Thongchai595-6
+const { user: userCookie, logout } = useAuth()
 const { toast } = useToast();
 
 const fileInput = ref(null)
@@ -294,6 +317,52 @@ async function handleProfileUpdate() {
         form.profilePictureFile = null;
     }
 }
+
+// Thongchai5956 
+const showDeleteModal = ref(false)
+
+const openDeleteModal = () => {
+    showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+    showDeleteModal.value = false
+}
+
+const handleDeleteRequest = async (requestData) => {
+    isLoading.value = true;
+    try {
+        // เรียก API ไปที่ backend path ที่เราสร้างไว้ (deletion.routes -> /request)
+        await $api('/deletion/request', {
+            method: 'POST',
+            body: {
+                password: requestData.password, 
+                reason: requestData.reason
+            }
+        });   
+
+
+        console.log('Delete request data:', requestData) 
+        
+        closeDeleteModal()
+
+        setTimeout(() => {
+            logout(); 
+        }, 2000);
+
+    } catch (error) {
+        console.error('Delete request failed:', error);
+        toast.error(
+            'เกิดข้อผิดพลาด',
+            error?.data?.message || 'ไม่สามารถส่งคำขอได้ (รหัสผ่านอาจไม่ถูกต้อง)'
+        );
+    } finally {
+        isLoading.value = false;
+    }
+}
+
+
+
 </script>
 
 <style scoped>

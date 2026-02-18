@@ -1,19 +1,18 @@
-import { useCookie } from '#app'
+import { useCookie, useNuxtApp } from '#app' // Import ให้ครบ
 import { useRouter } from 'vue-router'
 
 export function useAuth() {
   const { $api } = useNuxtApp()
 
   const cookieOpts = {
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: 60 * 60 * 24 * 7, // 7 วัน
     path: '/',
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production'
+    secure: false // ปิด secure เพื่อให้รองรับ HTTP ของมหาลัย
   }
+
   const token = useCookie('token', cookieOpts)
   const user = useCookie('user', cookieOpts)
-  // const token = useCookie('token', { maxAge: 60 * 60 * 24 * 7, secure: true })
-  // const user = useCookie('user', { maxAge: 60 * 60 * 24 * 7, secure: true })
   const router = useRouter()
 
   const login = async (identifier, password) => {
@@ -24,27 +23,47 @@ export function useAuth() {
       payload.username = identifier
     }
 
-    const res = await $api('/auth/login', {
-      method: 'POST',
-      body: payload
-    })
-    token.value = res.token
-    user.value = res.user
-    return res
-  }
+    try {
+      const res = await $api('/auth/login', {
+        method: 'POST',
+        body: payload
+      })
 
-  // const register = async (email, password, firstName, lastName) => {
-  //   const res = await $api('/users', {
-  //     method: 'POST',
-  //     body: { email, password, firstName, lastName }
-  //   })
-  //   return res
-  // }
+      console.log("🔥 DEBUG LOGIN RESPONSE:", res) // ดูค่าจริงใน Console
+
+      //  เช็คทั้งแบบมี .data และไม่มี .data 
+      // สาเหตุ: บางที $api ของ Nuxt มันแกะ .data ออกให้เราเองอัตโนมัติ
+      const accessToken = res.token || res.data?.token
+      const userData = res.user || res.data?.user
+
+      if (accessToken) {
+        // 1. บันทึกลง State/Cookie
+        token.value = accessToken
+        user.value = userData
+        
+        // 2. บันทึกลง LocalStorage (กันเหนียว)
+        if (process.client) {
+            localStorage.setItem('token', accessToken)
+            if (userData) {
+                localStorage.setItem('user', JSON.stringify(userData))
+            }
+        }
+      } else {
+        console.error("❌ หา Token ไม่เจอใน Response:", res)
+        throw new Error("Login failed: No token received")
+      }
+      
+      return res
+    } catch (error) {
+      console.error("Login Error:", error)
+      throw error
+    }
+  }
 
   const register = async (formData) => {
     const res = await $api('/users', {
       method: 'POST',
-      body: formData // ส่ง FormData ไปทั้งก้อน ไม่ต้องแปลงเป็น JSON
+      body: formData 
     })
     return res
   }
@@ -52,7 +71,11 @@ export function useAuth() {
   const logout = () => {
     token.value = null
     user.value = null
-    return router.push('/')
+    if (process.client) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+    }
+    return router.push('/login')
   }
 
   return { token, user, login, logout, register }
