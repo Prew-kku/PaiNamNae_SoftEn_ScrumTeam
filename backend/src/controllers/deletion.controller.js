@@ -15,6 +15,12 @@ const requestDeletion = catchAsync(async (req, res) => {
     res.status(200).json(result);
 });
 
+const cancelDeletion = catchAsync(async (req, res) => {
+    const userId = req.user.sub || req.user.id;
+    const result = await deletionService.cancelDeletionByUser(userId);
+    res.status(200).json(result);
+});
+
 const getRequests = catchAsync(async (req, res) => {
     const requests = await deletionService.getAllDeletionRequests();
     res.status(200).json(requests);
@@ -23,17 +29,18 @@ const getRequests = catchAsync(async (req, res) => {
 const approveRequest = catchAsync(async (req, res) => {
     const { id } = req.params;
     const result = await deletionService.approveDeletion(id);
-    res.status(200).json({ message: "Approved. Scheduled for hard delete in 90 days.", data: result });
+    res.status(200).json(result);
 });
 
 const rejectRequest = catchAsync(async (req, res) => {
     const { id } = req.params;
     const result = await deletionService.rejectDeletion(id);
-    res.status(200).json({ message: "Rejected. Data retained permanently.", data: result });
+    res.status(200).json(result);
 });
 
 module.exports = {
     requestDeletion,
+    cancelDeletion,
     getRequests,
     approveRequest,
     rejectRequest,

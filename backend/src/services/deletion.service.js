@@ -3,6 +3,49 @@ const prisma = require("../utils/prisma");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
 
+const ACTIVE_BOOKING_STATUSES = ["PENDING", "CONFIRMED"];
+const getGracePeriodDays = () => {
+    const days = Number(process.env.ACCOUNT_DELETION_GRACE_DAYS || 30);
+    if (Number.isNaN(days)) return 30;
+    return Math.min(30, Math.max(7, days));
+};
+
+const addDays = (date, days) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+};
+
+const getApprovalBlockers = async (userId) => {
+    const [activePassengerBookings, activeDriverBookings] = await Promise.all([
+        prisma.booking.count({
+            where: {
+                passengerId: userId,
+                status: { in: ACTIVE_BOOKING_STATUSES },
+            },
+        }),
+        prisma.booking.count({
+            where: {
+                route: { driverId: userId },
+                status: { in: ACTIVE_BOOKING_STATUSES },
+            },
+        }),
+    ]);
+
+    const blockers = [];
+    if (activePassengerBookings > 0 || activeDriverBookings > 0) {
+        blockers.push("มี booking ที่ยังไม่สิ้นสุด");
+    }
+
+    return {
+        blockers,
+        summary: {
+            activePassengerBookings,
+            activeDriverBookings,
+        },
+    };
+};
+
 const requestDeletion = async (userId, password, reason) => {
     // 1. ตรวจสอบ User
     const user = await prisma.user.findUnique({
@@ -12,12 +55,18 @@ const requestDeletion = async (userId, password, reason) => {
     if (!user) throw new ApiError(404, "User not found");
 
     // 2. ตรวจสอบ Password
+    if (!password) throw new ApiError(400, "Password is required");
+    if (!reason || !String(reason).trim()) throw new ApiError(400, "Reason is required");
+
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) throw new ApiError(401, "Incorrect password");
 
     // 3. ตรวจสอบคำขอค้าง (Prevent Double Request)
-    const existingRequest = await prisma.deletionRequest.findUnique({
-        where: { userId },
+    const existingRequest = await prisma.deletionRequest.findFirst({
+        where: {
+            userId,
+            status: "PENDING",
+        },
     });
 
     if (existingRequest) throw new ApiError(400, "Deletion request already pending");
@@ -28,7 +77,10 @@ const requestDeletion = async (userId, password, reason) => {
         // ตั้ง isActive = false (Login ไม่ได้, สมัครใหม่ด้วย Email เดิมไม่ได้เพราะติด Unique Constraint)
         await tx.user.update({
             where: { id: userId },
-            data: { isActive: false }
+            data: {
+                isActive: false,
+                deletionPending: true,
+            }
         });
 
         // สร้าง DeletionRequest สถานะ PENDING
@@ -37,6 +89,8 @@ const requestDeletion = async (userId, password, reason) => {
                 userId,
                 reason,
                 status: "PENDING",
+                approvedAt: null,
+                scheduledDeleteAt: null,
                 // backupData
                 backupData: {
                     initiatedAt: new Date(),
@@ -46,7 +100,38 @@ const requestDeletion = async (userId, password, reason) => {
         });
     });
 
-    return { message: "Deletion requested. Account suspended. Waiting for admin approval." };
+    return {
+        message: "Deletion requested. Account deactivated immediately.",
+        status: "PENDING",
+        gracePeriodDays: getGracePeriodDays(),
+    };
+};
+
+const cancelDeletionByUser = async (userId) => {
+    const request = await prisma.deletionRequest.findFirst({
+        where: {
+            userId,
+            status: "PENDING",
+        },
+    });
+
+    if (!request) throw new ApiError(404, "No pending deletion request found");
+
+    await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+            where: { id: userId },
+            data: {
+                isActive: true,
+                deletionPending: false,
+            },
+        });
+
+        await tx.deletionRequest.delete({
+            where: { id: request.id },
+        });
+    });
+
+    return { message: "Deletion request cancelled. Account reactivated." };
 };
 
 const getAllDeletionRequests = async () => {
@@ -66,63 +151,64 @@ const approveDeletion = async (requestId) => {
 
     if (!request) throw new ApiError(404, "Request not found");
 
-    const userId = request.userId;
-
-    // 1. โหลดข้อมูลทั้งหมดเพื่อทำ Backup
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            vehicles: true,
-            bookings: true,
-            createdRoutes: true,
-            driverVerification: true,
-        },
-    });
-
-    if (!user) {
-        // กรณีไม่เจอ User (อาจจะถูกลบไปแล้ว) ให้เคลียร์ Request ทิ้ง
-        await prisma.deletionRequest.delete({ where: { id: requestId } });
-        throw new ApiError(404, "User not found");
+    if (request.status !== "PENDING") {
+        throw new ApiError(400, "Only pending deletion request can be approved");
     }
 
-    // เตรียมข้อมูล Backup (Anonymized ในระดับ Audit Log ได้ถ้าต้องการ หรือเก็บ Raw ไว้เป็นหลักฐาน)
-    const backupData = {
-        userProfile: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-            createdAt: user.createdAt,
+    const userId = request.userId;
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            username: true,
+            email: true,
+            role: true,
+            createdAt: true,
         },
-        data: {
-            vehicles: user.vehicles,
-            bookings: user.bookings,
-            routes: user.createdRoutes,
-            verification: user.driverVerification
-        }
-    };
-
-    // 2. & 3. Transaction: สร้าง Audit Log และ Hard Delete User
-    await prisma.$transaction(async (tx) => {
-        // สร้าง Audit Log
-        await tx.deletionAudit.create({
-            data: {
-                originalUserId: user.id,
-                originalEmail: user.email,
-                reason: request.reason,
-                status: "COMPLETED",
-                performedBy: "ADMIN",
-                backupData: backupData
-            }
-        });
-
-        // HARD DELETE User
-        await tx.user.delete({
-            where: { id: userId }
-        });
     });
 
-    return { message: "User hard deleted and audit log created." };
+    if (!user) throw new ApiError(404, "User not found");
+
+    const { blockers, summary } = await getApprovalBlockers(userId);
+    if (blockers.length > 0) {
+        throw new ApiError(409, `Cannot approve deletion: ${blockers.join(", ")}`);
+    }
+
+    const approvedAt = new Date();
+    const gracePeriodDays = getGracePeriodDays();
+    const scheduledDeleteAt = addDays(approvedAt, gracePeriodDays);
+
+    const existingBackupData = request.backupData && typeof request.backupData === "object"
+        ? request.backupData
+        : {};
+
+    await prisma.deletionRequest.update({
+        where: { id: requestId },
+        data: {
+            status: "APPROVED",
+            approvedAt,
+            scheduledDeleteAt,
+            backupData: {
+                ...existingBackupData,
+                userProfile: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    role: user.role,
+                    createdAt: user.createdAt,
+                },
+                precheck: summary,
+            },
+        },
+    });
+
+    return {
+        message: "Deletion request approved and scheduled for anonymization.",
+        approvedAt,
+        scheduledDeleteAt,
+        gracePeriodDays,
+    };
 };
 
 const rejectDeletion = async (requestId) => {
@@ -136,7 +222,10 @@ const rejectDeletion = async (requestId) => {
         // เปิดใช้งานให้ User อีกครั้ง
         await tx.user.update({
             where: { id: request.userId },
-            data: { isActive: true }
+            data: {
+                isActive: true,
+                deletionPending: false,
+            }
         });
 
         // ลบคำขอทิ้ง
@@ -150,6 +239,7 @@ const rejectDeletion = async (requestId) => {
 
 module.exports = {
     requestDeletion,
+    cancelDeletionByUser,
     getAllDeletionRequests,
     approveDeletion,
     rejectDeletion,
