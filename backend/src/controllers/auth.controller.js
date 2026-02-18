@@ -13,7 +13,7 @@ const login = asyncHandler(async (req, res) => {
         user = await userService.getUserByUsername(username);
     }
 
-    if (user && !user.isActive) {
+    if (user && !user.isActive && !user.deletionPending) {
         throw new ApiError(401, "Your account has been deactivated.");
     }
 

@@ -187,7 +187,8 @@ definePageMeta({
 });
 
 const { $api } = useNuxtApp()
-const { user: userCookie } = useAuth()
+//Thongchai595-6
+const { user: userCookie, logout } = useAuth()
 const { toast } = useToast();
 
 const fileInput = ref(null)
@@ -329,36 +330,34 @@ const closeDeleteModal = () => {
 }
 
 const handleDeleteRequest = async (requestData) => {
-    
-    try{
-    // TODO เด้อ Backend : เรียก API สำหรับขอลบข้อมูล
-    // await $api('/users/request-deletion', {
-    //     method: 'POST',
-    //     body: requestData
-    // })   
+    isLoading.value = true;
+    try {
+        // เรียก API ไปที่ backend path ที่เราสร้างไว้ (deletion.routes -> /request)
+        await $api('/deletion/request', {
+            method: 'POST',
+            body: {
+                password: requestData.password, 
+                reason: requestData.reason
+            }
+        });   
 
 
-    console.log('Delete request data:', requestData) 
-    
-    toast.success(
-    'ส่งคำขอสำเร็จ',
-    'คำขอลบข้อมูลของคุณได้รับการบันทึกแล้ว ทีมงานจะดำเนินการภายใน 30 วัน'
-    )
+        console.log('Delete request data:', requestData) 
+        
+        closeDeleteModal()
 
-    closeDeleteModal()
-
-    // TODO 2 เด้อ Backend : Logout user after successful request
-    // setTimeout(() => {
-    //     logout()
-    // }, 2000)
+        setTimeout(() => {
+            logout(); 
+        }, 2000);
 
     } catch (error) {
-        console.error('Delete request failed:', error)
+        console.error('Delete request failed:', error);
         toast.error(
             'เกิดข้อผิดพลาด',
-            error?.data?.message || 'ไม่สามารถส่งคำขอได้ กรุณาลองใหม่อีกครั้ง'
-        )
-        closeDeleteModal
+            error?.data?.message || 'ไม่สามารถส่งคำขอได้ (รหัสผ่านอาจไม่ถูกต้อง)'
+        );
+    } finally {
+        isLoading.value = false;
     }
 }
 
