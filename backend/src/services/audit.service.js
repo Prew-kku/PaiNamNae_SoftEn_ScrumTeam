@@ -6,98 +6,135 @@ const prisma = require('../utils/prisma');
  */
 const getLogs = async (query) => {
     try {
-        const { page = 1, limit = 20, search } = query;
+        const {
+            page = 1,
+            limit = 20,
+            search = '',
+            action = '',
+            requestType = '',
+            adminId = '',
+            dateFrom = '',
+            dateTo = '',
+        } = query;
         const skip = (Number(page) - 1) * Number(limit);
 
-        // 1. Fetch from DeletionRequest (Active requests: APPROVED, REJECTED)
-        // Note: PENDING requests are usually "In Progress", maybe show them too?
-        // User said: "Show user data we approved/rejected in All Request"
-        const requests = await prisma.deletionRequest.findMany({
-            where: {
-                status: {
-                    in: ['APPROVED', 'REJECTED']
+        if (requestType && String(requestType).toLowerCase() !== 'deletion') {
+            return {
+                logs: [],
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total: 0,
+                    totalPages: 1,
                 },
-                // Add search filters if needed
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true, username: true, email: true, role: true, firstName: true, lastName: true
-                    }
+            };
+        }
+
+        const eventTimeFilter = {};
+        if (dateFrom) {
+            const from = new Date(dateFrom);
+            if (!Number.isNaN(from.getTime())) {
+                eventTimeFilter.gte = from;
+            }
+        }
+        if (dateTo) {
+            const to = new Date(dateTo);
+            if (!Number.isNaN(to.getTime())) {
+                to.setHours(23, 59, 59, 999);
+                eventTimeFilter.lte = to;
+            }
+        }
+
+        const where = {
+            ...(action ? { status: String(action).toUpperCase() } : {}),
+            ...(adminId ? { performedBy: String(adminId).toUpperCase() } : {}),
+            ...(Object.keys(eventTimeFilter).length ? { eventTime: eventTimeFilter } : {}),
+            ...(search
+                ? {
+                    OR: [
+                        { reason: { contains: search, mode: 'insensitive' } },
+                        { originalEmail: { contains: search, mode: 'insensitive' } },
+                        { originalUserId: { contains: search, mode: 'insensitive' } },
+                        {
+                            request: {
+                                user: {
+                                    OR: [
+                                        { email: { contains: search, mode: 'insensitive' } },
+                                        { username: { contains: search, mode: 'insensitive' } },
+                                        { firstName: { contains: search, mode: 'insensitive' } },
+                                        { lastName: { contains: search, mode: 'insensitive' } },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
                 }
-            },
-            orderBy: { updatedAt: 'desc' },
-            take: Number(limit) * 2 // Fetch more to allow merging and sorting in memory (limitation of combining tables)
-        });
+                : {}),
+        };
 
-        // 2. Fetch from DeletionAudit (Completed/Hard Deleted)
-        const audits = await prisma.deletionAudit.findMany({
-            orderBy: { deletedAt: 'desc' },
-            take: Number(limit) * 2
-        });
+        const [total, audits] = await Promise.all([
+            prisma.deletionAudit.count({ where }),
+            prisma.deletionAudit.findMany({
+                where,
+                orderBy: { eventTime: 'desc' },
+                skip,
+                take: Number(limit),
+                include: {
+                    request: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    username: true,
+                                    email: true,
+                                    role: true,
+                                    firstName: true,
+                                    lastName: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+        ]);
 
-        // 3. Map to common format
-        const requestLogs = (requests || []).map(req => ({
-            id: `req_${req.id}`,
-            timestamp: req.updatedAt, // Use updatedAt as the time of action (Approve/Reject)
-            action: req.status, // APPROVED, REJECTED
-            request: {
-                id: req.id,
-                type: 'deletion',
-                status: req.status.toLowerCase(),
-                user: req.user
-            },
-            performedBy: {
-                // Since we don't track adminId yet, use placeholder or "System"
-                id: 'admin',
-                firstName: 'Admin',
-                lastName: '(System)',
-                role: 'ADMIN'
-            },
-            detail: `${req.status === 'APPROVED' ? 'อนุมัติ' : 'ปฏิเสธ'}คำร้องขอลบบัญชี`,
-            originalData: req
-        }));
+        const logs = (audits || []).map((audit) => {
+            const req = audit.request;
+            const reqUser = req?.user;
 
-        const auditLogs = (audits || []).map(audit => ({
-            id: `audit_${audit.id}`,
-            timestamp: audit.deletedAt,
-            action: 'HARD_DELETED',
-            request: {
-                id: 'deleted',
-                type: 'deletion',
-                status: 'deleted',
-                user: {
-                    id: audit.originalUserId,
-                    firstName: 'Deleted User',
+            return {
+                id: audit.id,
+                timestamp: audit.eventTime,
+                action: audit.status,
+                request: {
+                    id: req?.id || audit.requestId || null,
+                    type: 'deletion',
+                    status: req?.status?.toLowerCase?.() || 'deleted',
+                    user: reqUser
+                        ? reqUser
+                        : {
+                            id: audit.originalUserId,
+                            firstName: 'Deleted',
+                            lastName: 'User',
+                            username: 'deleted-user',
+                            email: audit.originalEmail,
+                            role: 'UNKNOWN',
+                        },
+                },
+                performedBy: {
+                    id: audit.performedBy || 'SYSTEM',
+                    firstName: audit.performedBy || 'System',
                     lastName: '',
-                    email: audit.originalEmail,
-                    role: 'UNKNOWN'
-                }
-            },
-            performedBy: {
-                id: 'system',
-                firstName: audit.performedBy || 'System',
-                lastName: '',
-                role: 'SYSTEM'
-            },
-            detail: `ลบบัญชีถาวร (Hard Delete) - ${audit.reason || '-'}`,
-            originalData: audit
-        }));
-
-        // 4. Combine and Sort
-        let allLogs = [...requestLogs, ...auditLogs];
-        allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        // 5. Paginate manually
-        const total = allLogs.length; // Approximate total since we capped fetching
-        const paginatedLogs = allLogs.slice(0, Number(limit)); // We already skipped? No, slicing from combined.
-        // Actually, skip logic is hard with combined sources efficiently. 
-        // For now, fetching recent 2*limit from both and taking top limit is okay for small scale.
-
-        console.log(`[AuditService] Found ${requests.length} requests, ${audits.length} audits. Total logs: ${total}`);
+                    role: audit.performedBy || 'SYSTEM',
+                },
+                detail: audit.reason || '-',
+                backupData: audit.backupData || null,
+                originalData: audit,
+            };
+        });
 
         return {
-            logs: paginatedLogs,
+            logs,
             pagination: {
                 page: Number(page),
                 limit: Number(limit),

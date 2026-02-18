@@ -41,8 +41,6 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500">
                                 <option value="">ทั้งหมด</option>
                                 <option value="deletion">ขอลบบัญชี</option>
-                                <option value="incident">แจ้งเหตุการณ์</option>
-                                <option value="behavior">รายงานพฤติกรรม</option>
                             </select>
                         </div>
 
@@ -55,10 +53,8 @@
                                 <option value="pending">รอดำเนินการ</option>
                                 <option value="approved">อนุมัติแล้ว</option>
                                 <option value="rejected">ปฏิเสธแล้ว</option>
-                                <option value="open">เปิด</option>
-                                <option value="in_progress">กำลังดำเนินการ</option>
-                                <option value="resolved">แก้ไขแล้ว</option>
-                                <option value="closed">ปิดแล้ว</option>
+                                <option value="cancelled">ยกเลิกแล้ว</option>
+                                <option value="deleted">ลบ/นิรนามแล้ว</option>
                             </select>
                         </div>
 
@@ -128,11 +124,11 @@
                                     class="transition-opacity hover:bg-gray-50">
                                     <td class="px-4 py-3">
                                         <div class="flex items-center gap-3">
-                                            <img :src="r.user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.user.firstName || 'U')}&background=random&size=64`"
+                                            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(getUserDisplayName(r.user) || 'U')}&background=random&size=64`"
                                                 class="object-cover rounded-full w-9 h-9" alt="avatar" />
                                             <div>
                                                 <div class="font-medium text-gray-900">
-                                                    {{ r.user.firstName }} {{ r.user.lastName }}
+                                                    {{ getUserDisplayName(r.user) }}
                                                 </div>
                                             </div>
                                         </div>
@@ -240,7 +236,7 @@
                     {{ modal.action === 'approve' ? 'อนุมัติคำร้อง' : 'ปฏิเสธคำร้อง' }}
                 </h3>
                 <p class="mb-4 text-sm text-gray-500">
-                    คำร้องของ {{ modal.request?.user.firstName }} {{ modal.request?.user.lastName }}
+                    คำร้องของ {{ getUserDisplayName(modal.request?.user) }}
                 </p>
 
                 <template v-if="modal.action !== 'approve'">
@@ -316,6 +312,20 @@ const totalPages = computed(() =>
 
 const filteredRequests = computed(() => requests.value) // API กรองมาให้แล้ว
 
+function normalizeRequestItem(r) {
+    return {
+        id: r.id,
+        type: 'deletion',
+        status: String(r.status || '').toLowerCase(),
+        createdAt: r.requestedAt || r.createdAt,
+        user: r.user || {},
+        deletion: {
+            reason: r.reason,
+            backupData: r.backupData,
+        },
+    }
+}
+
 async function fetchRequests(page = 1) {
     isLoading.value = true
     loadError.value = ''
@@ -344,22 +354,13 @@ async function fetchRequests(page = 1) {
         // ตาม deletion.controller.js: res.status(200).json(requests); -> เป็น Array
         
         if (Array.isArray(res)) {
-            requests.value = res.map(r => ({
-                id: r.id,
-                type: 'deletion', // บังคับเป็น deletion เพราะ endpoint นี้คืนค่า DeletionRequest
-                status: r.status.toLowerCase(), // Backend: PENDING, APPROVED, REJECTED
-                createdAt: r.requestedAt || r.createdAt,
-                user: r.user,
-                deletion: {
-                    reason: r.reason,
-                    backupData: r.backupData
-                }
-            }))
-            pagination.total = res.length // Backend ยังไม่มี pagination
-            pagination.totalPages = 1 
+            requests.value = res.map(normalizeRequestItem)
+            pagination.total = res.length
+            pagination.totalPages = 1
         } else {
-             // เผื่ออนาคต
-            requests.value = res.data || []
+            requests.value = Array.isArray(res?.data) ? res.data.map(normalizeRequestItem) : []
+            pagination.total = Number(res?.pagination?.total || requests.value.length)
+            pagination.totalPages = Number(res?.pagination?.totalPages || 1)
         }
 
     } catch (err) {
@@ -407,18 +408,14 @@ function roleBadge(role) {
 
 function typeBadge(type) {
     const map = {
-        'deletion': 'bg-red-100 text-red-700',
-        'incident': 'bg-orange-100 text-orange-700',
-        'behavior': 'bg-yellow-100 text-yellow-700'
+        'deletion': 'bg-red-100 text-red-700'
     }
     return map[type] || 'bg-gray-100 text-gray-700'
 }
 
 function typeLabel(type) {
     const map = {
-        'deletion': 'ขอลบบัญชี',
-        'incident': 'แจ้งเหตุการณ์',
-        'behavior': 'รายงานพฤติกรรม'
+        'deletion': 'ขอลบบัญชี'
     }
     return map[type] || type
 }
@@ -428,10 +425,8 @@ function statusBadge(status) {
         'pending': 'bg-yellow-100 text-yellow-700',
         'approved': 'bg-green-100 text-green-700',
         'rejected': 'bg-red-100 text-red-700',
-        'open': 'bg-blue-100 text-blue-700',
-        'in_progress': 'bg-indigo-100 text-indigo-700',
-        'resolved': 'bg-green-100 text-green-700',
-        'closed': 'bg-gray-100 text-gray-600'
+        'cancelled': 'bg-gray-100 text-gray-700',
+        'deleted': 'bg-slate-200 text-slate-700'
     }
     return map[status] || 'bg-gray-100 text-gray-700'
 }
@@ -441,12 +436,16 @@ function statusLabel(status) {
         'pending': 'รอดำเนินการ',
         'approved': 'อนุมัติแล้ว',
         'rejected': 'ปฏิเสธแล้ว',
-        'open': 'เปิด',
-        'in_progress': 'กำลังดำเนินการ',
-        'resolved': 'แก้ไขแล้ว',
-        'closed': 'ปิดแล้ว'
+        'cancelled': 'ยกเลิกแล้ว',
+        'deleted': 'ลบ/นิรนามแล้ว'
     }
     return map[status] || status
+}
+
+function getUserDisplayName(user) {
+    if (!user) return '-'
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    return fullName || user.username || user.email || user.id || '-'
 }
 
 function formatDate(iso) {

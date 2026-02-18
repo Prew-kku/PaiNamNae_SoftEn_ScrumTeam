@@ -41,11 +41,12 @@
                             <select v-model="filters.action" @change="applyFilters"
                                 class="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">ทั้งหมด</option>
+                                <option value="REQUESTED">ยื่นคำขอ</option>
+                                <option value="CANCELLED">ยกเลิกคำขอ</option>
                                 <option value="APPROVED">อนุมัติ</option>
                                 <option value="REJECTED">ปฏิเสธ</option>
-                                <option value="REPLY">ตอบกลับ</option>
-                                <option value="CREATED">สร้างคำร้อง</option>
-                                <option value="CLOSED">ปิดคำร้อง</option>
+                                <option value="ANONYMIZED">นิรนามข้อมูล</option>
+                                <option value="DELETED">ลบแล้ว</option>
                             </select>
                         </div>
 
@@ -57,8 +58,6 @@
                                 class="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">ทั้งหมด</option>
                                 <option value="deletion">ขอลบบัญชี</option>
-                                <option value="incident">แจ้งเหตุการณ์</option>
-                                <option value="behavior">รายงานพฤติกรรม</option>
                             </select>
                         </div>
 
@@ -155,9 +154,9 @@
                                     <!-- เจ้าของคำร้อง -->
                                     <td class="px-5 py-3.5">
                                         <div class="text-sm font-medium text-gray-800">
-                                            {{ log.request.user.firstName }} {{ log.request.user.lastName }}
+                                            {{ ownerName(log) }}
                                         </div>
-                                        <div class="text-xs text-gray-400">{{ log.request.user.email }}</div>
+                                        <div class="text-xs text-gray-400">{{ log?.request?.user?.email || '-' }}</div>
                                     </td>
 
                                     <!-- คำร้อง -->
@@ -179,18 +178,18 @@
                                     <!-- ดำเนินการโดย -->
                                     <td class="px-5 py-3.5">
                                         <div class="text-sm font-medium text-gray-800">
-                                            {{ log.performedBy.firstName }} {{ log.performedBy.lastName }}
+                                            {{ actorName(log) }}
                                         </div>
                                         <div class="text-xs text-gray-400">
-                                            {{ roleLabel(log.performedBy.role) }}
+                                            {{ roleLabel(log?.performedBy?.role) }}
                                         </div>
                                     </td>
 
                                     <!-- รายละเอียด -->
                                     <td class="px-5 py-3.5">
                                         <div class="flex items-center gap-2 max-w-[12rem]">
-                                            <p class="text-sm text-gray-600 truncate">{{ log.detail }}</p>
-                                            <button @click="goToRequest(log.request.id)"
+                                            <p class="text-sm text-gray-600 truncate">{{ detailText(log) }}</p>
+                                            <button v-if="log?.request?.id" @click="goToRequest(log.request.id)"
                                                 class="flex-shrink-0 flex items-center justify-center w-7 h-7 text-gray-400 transition-colors rounded-md cursor-pointer hover:text-blue-600 hover:bg-blue-50"
                                                 title="ดูรายละเอียดคำร้อง">
                                                 <i class="fa-solid fa-eye text-xs"></i>
@@ -290,6 +289,15 @@ const filters = reactive({
 // test
 // ─── Real Data Fetching ───
 const auditLogs = ref([])
+const adminList = computed(() => {
+    const map = new Map()
+    for (const log of auditLogs.value || []) {
+        const actor = log?.performedBy
+        if (!actor?.id) continue
+        if (!map.has(actor.id)) map.set(actor.id, actor)
+    }
+    return Array.from(map.values())
+})
 
 async function fetchLogs(page = 1) {
     isLoading.value = true
@@ -307,7 +315,10 @@ async function fetchLogs(page = 1) {
                 limit: pagination.limit,
                 search: filters.q,
                 action: filters.action,
-                // ... other filters
+                requestType: filters.requestType,
+                adminId: filters.adminId,
+                dateFrom: filters.dateFrom,
+                dateTo: filters.dateTo,
             }
         })
 
@@ -361,12 +372,12 @@ onMounted(() => {
 
 function actionLabel(action) {
     const map = {
-        'CREATED': 'สร้างคำร้อง',
-        'STATUS_CHANGE': 'เปลี่ยนสถานะ',
+        'REQUESTED': 'ยื่นคำขอ',
+        'CANCELLED': 'ยกเลิกคำขอ',
         'APPROVED': 'อนุมัติ',
         'REJECTED': 'ปฏิเสธ',
-        'REPLY': 'ตอบกลับ',
-        'CLOSED': 'ปิดคำร้อง'
+        'ANONYMIZED': 'นิรนามข้อมูล',
+        'DELETED': 'ลบแล้ว'
     }
     return map[action] || action
 }
@@ -374,6 +385,8 @@ function actionLabel(action) {
 function roleLabel(role) {
     const map = {
         'ADMIN': 'แอดมิน',
+        'SYSTEM': 'ระบบ',
+        'SYSTEM_CRON': 'ระบบอัตโนมัติ',
         'DRIVER': 'คนขับ',
         'PASSENGER': 'ผู้โดยสาร'
     }
@@ -382,11 +395,34 @@ function roleLabel(role) {
 
 function requestTypeLabel(type) {
     const map = {
-        'deletion': 'ขอลบบัญชี',
-        'incident': 'แจ้งเหตุการณ์',
-        'behavior': 'รายงานพฤติกรรม'
+        'deletion': 'ขอลบบัญชี'
     }
     return map[type] || type
+}
+
+function ownerName(log) {
+    const user = log?.request?.user
+    if (!user) return '-'
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    return fullName || user.username || user.email || user.id || '-'
+}
+
+function actorName(log) {
+    const actor = log?.performedBy
+    if (!actor) return '-'
+    const fullName = `${actor.firstName || ''} ${actor.lastName || ''}`.trim()
+    return fullName || actor.id || '-'
+}
+
+function detailText(log) {
+    if (!log) return '-'
+    const raw = log?.detail && String(log.detail).trim() ? String(log.detail).trim() : '-'
+    const summary = log?.backupData?.transitionSummary?.travelRouteSnapshotSummary
+    if (!summary) return raw
+
+    const routeCount = Number(summary.driverRouteCount || 0)
+    const bookingCount = Number(summary.passengerBookingCount || 0)
+    return `${raw} • เส้นทาง ${routeCount} • การจอง ${bookingCount}`
 }
 
 function formatDate(iso) {
