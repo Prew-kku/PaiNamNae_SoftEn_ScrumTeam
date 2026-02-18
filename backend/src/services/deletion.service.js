@@ -1,4 +1,4 @@
-// Thongchai595-6
+﻿// Thongchai595-6
 const prisma = require("../utils/prisma");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/ApiError");
@@ -49,17 +49,147 @@ const requestDeletion = async (userId, password, reason) => {
     return { message: "Deletion requested. Account suspended. Waiting for admin approval." };
 };
 
-const getAllDeletionRequests = async () => {
+const getAllDeletionRequests = async (filters = {}) => {
+    const { status, role, type, search } = filters;
+
+    const where = {};
+
+    if (status) {
+        // Support comma-separated status
+        const statuses = status.split(',').map(s => s.toUpperCase());
+        where.status = { in: statuses };
+    }
+
+    if (role) {
+        where.user = { role: role.toUpperCase() };
+    }
+
+    // DeletionRequest is strictly 'deletion', but if we had other types field, we would filter.
+    // Assuming 'type' filter from frontend corresponds to DeletionRequest (which is one type). 
+    // If frontend sends type='incident', this service should probably return empty or ignore if strictly deletion service.
+
+    if (search) {
+        where.OR = [
+            { user: { username: { contains: search, mode: 'insensitive' } } },
+            { user: { email: { contains: search, mode: 'insensitive' } } },
+            { user: { firstName: { contains: search, mode: 'insensitive' } } },
+            { user: { lastName: { contains: search, mode: 'insensitive' } } }
+        ];
+    }
+
     return await prisma.deletionRequest.findMany({
+        where,
         orderBy: { requestedAt: "desc" },
         include: {
-            user: { select: { id: true, email: true, username: true, role: true } }
+            user: { select: { id: true, email: true, username: true, role: true, firstName: true, lastName: true, profilePicture: true } }
         }
     });
 };
 
 
+const emailService = require("../services/email.service"); // Import email service
+
 const approveDeletion = async (requestId) => {
+    const request = await prisma.deletionRequest.findUnique({
+        where: { id: requestId },
+        include: { user: true }
+    });
+
+    if (!request) throw new ApiError(404, "Request not found");
+
+    const userId = request.userId;
+    const user = request.user;
+
+    if (!user) {
+        // กรณีไม่เจอ User (อาจจะถูกลบไปแล้ว) ให้เคลียร์ Request ทิ้ง
+        await prisma.deletionRequest.delete({ where: { id: requestId } });
+        throw new ApiError(404, "User not found");
+    }
+
+    // คำนวณวันที่จะ Hard Delete (90 วันจากนี้)
+    const scheduledDate = new Date();
+    scheduledDate.setDate(scheduledDate.getDate() + 90);
+
+    // อัปเดตสถานะ Request และกำหนดวันลบ
+    const updatedRequest = await prisma.deletionRequest.update({
+        where: { id: requestId },
+        data: {
+            status: "APPROVED",
+            approvedAt: new Date(),
+            scheduledDeleteAt: scheduledDate
+        }
+    });
+
+    // ส่งอีเมลแจ้งเตือน User
+    try {
+        await emailService.sendEmail(
+            user.email,
+            "คำขอลบบัญชีของคุณได้รับการอนุมัติ",
+            `คำขอของคุณได้รับการอนุมัติแล้ว บัญชีของคุณจะถูกลบถาวรในวันที่ ${scheduledDate.toLocaleDateString('th-TH')} หากคุณเปลี่ยนใจ กรุณาติดต่อเราก่อนวันดังกล่าว`
+        );
+    } catch (error) {
+        console.error("Failed to send approval email:", error);
+    }
+
+    return {
+        message: "Request approved. Account scheduled for deletion in 90 days.",
+        data: updatedRequest
+    };
+};
+
+const rejectDeletion = async (requestId, adminReason) => {
+    const request = await prisma.deletionRequest.findUnique({
+        where: { id: requestId },
+        include: { user: true }
+    });
+
+    if (!request) throw new ApiError(404, "Request not found");
+
+    await prisma.$transaction(async (tx) => {
+        // เปิดใช้งานให้ User อีกครั้ง
+        await tx.user.update({
+            where: { id: request.userId },
+            data: { isActive: true }
+        });
+
+        // อัปเดตสถานะเป็น REJECTED (แทนการลบทิ้ง เพื่อเก็บประวัติ) หรือลบทิ้งตาม Business Logic
+        // แต่ User บอกว่า "Admin ติกเครื่องหมายกากะบาด ... แจ้งไปที่ email"
+        // การเก็บ History ดีกว่า
+        await tx.deletionRequest.update({
+            where: { id: requestId },
+            data: {
+                status: "REJECTED",
+                // ถ้ามี field เก็บเหตุผลการปฏิเสธใน Schema ก็ใส่ได้ (ใน Schema ปัจจุบันไม่มี adminNote ชัดเจน อาจต้องใช้ reason เดิมหรือเพิ่ม field)
+                // แต่ Schema มีแค่ reason (ของ user).
+                // เราจะส่งผลทางอีเมลเป็นหลัก
+            }
+        });
+    });
+
+    // ส่งอีเมลแจ้งเตือน User
+    try {
+        await emailService.sendEmail(
+            request.user.email,
+            "คำขอลบบัญชีของคุณถูกปฏิเสธ",
+            `คำขอของคุณถูกปฏิเสธโดยแอดมิน\nเหตุผล: ${adminReason || 'ไม่ระบุ'}\nบัญชีของคุณกลับมาใช้งานได้ตามปกติ`
+        );
+    } catch (error) {
+        console.error("Failed to send rejection email:", error);
+    }
+
+    return { message: "Deletion request rejected. Account reactivated." };
+};
+
+const getRequestById = async (id) => {
+    const request = await prisma.deletionRequest.findUnique({
+        where: { id },
+        include: { user: true }
+    });
+    if (!request) throw new ApiError(404, "Request not found");
+    return request;
+};
+
+const executeHardDelete = async (requestId) => {
     const request = await prisma.deletionRequest.findUnique({
         where: { id: requestId }
     });
@@ -82,10 +212,10 @@ const approveDeletion = async (requestId) => {
     if (!user) {
         // กรณีไม่เจอ User (อาจจะถูกลบไปแล้ว) ให้เคลียร์ Request ทิ้ง
         await prisma.deletionRequest.delete({ where: { id: requestId } });
-        throw new ApiError(404, "User not found");
+        return;
     }
 
-    // เตรียมข้อมูล Backup (Anonymized ในระดับ Audit Log ได้ถ้าต้องการ หรือเก็บ Raw ไว้เป็นหลักฐาน)
+    // เตรียมข้อมูล Backup
     const backupData = {
         userProfile: {
             id: user.id,
@@ -111,12 +241,14 @@ const approveDeletion = async (requestId) => {
                 originalEmail: user.email,
                 reason: request.reason,
                 status: "COMPLETED",
-                performedBy: "ADMIN",
+                performedBy: "SYSTEM_CRON",
                 backupData: backupData
             }
         });
 
-        // HARD DELETE User
+        // HARD DELETE User (Cascade should handle relations, but user might want explicit cleanup?)
+        // Schema says: user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+        // So deleting user should delete related data.
         await tx.user.delete({
             where: { id: userId }
         });
@@ -125,32 +257,11 @@ const approveDeletion = async (requestId) => {
     return { message: "User hard deleted and audit log created." };
 };
 
-const rejectDeletion = async (requestId) => {
-    const request = await prisma.deletionRequest.findUnique({
-        where: { id: requestId }
-    });
-
-    if (!request) throw new ApiError(404, "Request not found");
-
-    await prisma.$transaction(async (tx) => {
-        // เปิดใช้งานให้ User อีกครั้ง
-        await tx.user.update({
-            where: { id: request.userId },
-            data: { isActive: true }
-        });
-
-        // ลบคำขอทิ้ง
-        await tx.deletionRequest.delete({
-            where: { id: requestId }
-        });
-    });
-
-    return { message: "Deletion request rejected. Account reactivated." };
-};
-
 module.exports = {
     requestDeletion,
     getAllDeletionRequests,
     approveDeletion,
     rejectDeletion,
+    getRequestById,
+    executeHardDelete,
 };

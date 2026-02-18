@@ -239,127 +239,50 @@ useHead({
 const isLoading = ref(false)
 const loadError = ref('')
 
-// ─── Mock Data (จะเปลี่ยนเป็น API เมื่อ backend พร้อม) ───
-const mockData = {
-    'req_1': {
-        id: 'req_1',
-        type: 'deletion',
-        status: 'pending',
-        createdAt: '2026-02-15T02:30:00Z',
-        updatedAt: '2026-02-15T02:30:00Z',
-        user: {
-            id: 'u1',
-            firstName: 'Somchai',
-            lastName: 'Jaidee',
-            email: 'somchai@example.com',
-            username: 'somchai_j',
-            role: 'PASSENGER'
-        },
-        deletion: {
-            reason: 'privacy_concern',
-            description: 'I am concerned about my personal data.'
-        }
-    },
-    'req_2': {
-        id: 'req_2',
-        type: 'deletion',
-        status: 'approved',
-        createdAt: '2026-02-14T10:00:00Z',
-        updatedAt: '2026-02-14T11:00:00Z',
-        user: {
-            id: 'u2',
-            firstName: 'Anong',
-            lastName: 'Dee',
-            email: 'anong@example.com',
-            username: 'anong_d',
-            role: 'PASSENGER'
-        },
-        deletion: {
-            reason: 'not_use_anymore',
-            description: 'I no longer use this service.',
-            adminNote: 'Account deleted successfully.',
-            reviewedAt: '2026-02-14T11:00:00Z'
-        }
-    },
-    'req_3': {
-        id: 'req_3',
-        type: 'deletion',
-        status: 'rejected',
-        createdAt: '2026-02-13T09:00:00Z',
-        updatedAt: '2026-02-13T12:00:00Z',
-        user: {
-            id: 'u3',
-            firstName: 'Preecha',
-            lastName: 'Sukjai',
-            email: 'preecha@example.com',
-            username: 'preecha_s',
-            role: 'DRIVER'
-        },
-        deletion: {
-            reason: 'other',
-            description: 'Please remove my account.',
-            adminNote: 'User has ongoing legal investigation.',
-            reviewedAt: '2026-02-13T12:00:00Z'
-        }
-    },
-    'req_4': {
-        id: 'req_4',
-        type: 'incident',
-        status: 'open',
-        createdAt: '2026-02-14T15:00:00Z',
-        updatedAt: '2026-02-14T15:00:00Z',
-        user: {
-            id: 'u4',
-            firstName: 'Suda',
-            lastName: 'Meesuk',
-            email: 'suda@example.com',
-            username: 'suda_m',
-            role: 'PASSENGER'
-        },
-        ticket: {
-            type: 'incident',
-            title: 'คนขับไม่มารับตามเวลา',
-            description: 'จองรถเวลา 08:00 แต่คนขับมาถึง 09:30',
-            replies: [
-                {
-                    id: 'reply_1',
-                    sender: { firstName: 'Admin', lastName: '' },
-                    message: 'ขอบคุณที่แจ้งครับ กำลังตรวจสอบ',
-                    createdAt: '2026-02-14T16:00:00Z'
+// ─── Real Data Fetching ───
+const config = useRuntimeConfig()
+const request = ref(null)
+
+async function fetchRequest() {
+    isLoading.value = true
+    loadError.value = ''
+    try {
+        const token = useCookie('token').value || (process.client ? localStorage.getItem('token') : '')
+        const res = await $fetch(`/deletion/admin/requests/${requestId}`, {
+            baseURL: config.public.apiBase,
+            headers: { Authorization: `Bearer ${token}` }
+        })
+
+        if (res) {
+            // Map API response to UI model
+            request.value = {
+                id: res.id,
+                type: 'deletion', // Currently backend only supports deletion request via this API
+                status: res.status.toLowerCase(),
+                createdAt: res.requestedAt || res.createdAt,
+                updatedAt: res.updatedAt,
+                user: res.user,
+                deletion: {
+                    reason: res.reason,
+                    description: null, // Backend might not have description field yet? Check schema.
+                    adminNote: res.adminReason, // Map adminReason -> adminNote
+                    reviewedAt: res.updatedAt // Use updatedAt as review time for now
                 }
-            ],
-            attachments: []
+            }
+        } else {
+            loadError.value = 'ไม่พบข้อมูลคำร้อง'
         }
-    },
-    'req_5': {
-        id: 'req_5',
-        type: 'behavior',
-        status: 'in_progress',
-        createdAt: '2026-02-12T11:00:00Z',
-        updatedAt: '2026-02-13T08:00:00Z',
-        user: {
-            id: 'u5',
-            firstName: 'Wichai',
-            lastName: 'Tongdee',
-            email: 'wichai@example.com',
-            username: 'wichai_t',
-            role: 'PASSENGER'
-        },
-        ticket: {
-            type: 'behavior',
-            title: 'คนขับพูดจาไม่สุภาพ',
-            description: 'คนขับใช้คำพูดไม่เหมาะสมระหว่างเดินทาง',
-            replies: [],
-            attachments: []
-        }
+    } catch (err) {
+        console.error(err)
+        loadError.value = 'ไม่สามารถโหลดข้อมูลได้ หรือคำร้องถูกลบแล้ว'
+    } finally {
+        isLoading.value = false
     }
 }
 
-const request = ref(mockData[requestId] || null)
-
-if (!request.value) {
-    loadError.value = 'ไม่พบคำร้องนี้'
-}
+onMounted(() => {
+    fetchRequest()
+})
 
 // ─── Helpers ───
 function roleBadge(role) {

@@ -9,6 +9,7 @@ router.post("/request", protect, deletionController.requestDeletion);
 
 // Admin Actions
 router.get("/admin/requests", protect, requireAdmin, deletionController.getRequests);
+router.get("/admin/requests/:id", protect, requireAdmin, deletionController.getRequestById);
 router.patch("/admin/requests/:id/approve", protect, requireAdmin, deletionController.approveRequest);
 router.patch("/admin/requests/:id/reject", protect, requireAdmin, deletionController.rejectRequest);
 

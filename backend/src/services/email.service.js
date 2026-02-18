@@ -47,6 +47,31 @@ const sendAccountDeletionEmail = async (to, username) => {
     }
 };
 
+/**
+ * Send Generic Email
+ */
+const sendEmail = async (to, subject, html) => {
+    const fromEmail = (process.env.SMTP_USER || '').trim();
+
+    const mailOptions = {
+        from: `"Pai Nam Nae Admin System" <${fromEmail}>`,
+        to: to,
+        subject: subject,
+        html: html,
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`✅ Email sent to ${to}: ${subject}`);
+        return info;
+    } catch (error) {
+        console.error(`❌ Email Failed to ${to}:`, error.message);
+        // Don't throw error to prevent crashing the request, just log it.
+        return null;
+    }
+};
+
 module.exports = {
     sendAccountDeletionEmail,
+    sendEmail,
 };
