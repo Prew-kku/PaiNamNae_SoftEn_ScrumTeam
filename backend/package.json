@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Email service: Brevo (for real delivery)",
   "dependencies": {
     "@prisma/client": "^5.15.0",
     "axios": "^1.12.2",
@@ -25,6 +25,7 @@
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "nodemailer": "^6.10.0",
     "node-cron": "^4.2.1",
     "prom-client": "^15.1.2",
     "swagger-jsdoc": "^6.2.8",

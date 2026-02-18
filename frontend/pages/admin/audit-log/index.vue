@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="">
         <AdminHeader />
         <AdminSidebar />
@@ -288,267 +288,76 @@ const filters = reactive({
 })
 
 // test
-const auditLogs = ref([
-    {
-        id: 'log_1',
-        timestamp: '2026-02-15T14:30:00Z',
-        action: 'CREATED',
-        request: {
-            id: 'req_1',
-            type: 'deletion',
-            status: 'pending',
-            user: {
-                id: 'u1', firstName: 'Somchai', lastName: 'Jaidee',
-                email: 'somchai@example.com', profilePicture: null, role: 'PASSENGER'
-            }
-        },
-        performedBy: {
-            id: 'u1', firstName: 'Somchai', lastName: 'Jaidee', role: 'PASSENGER'
-        },
-        detail: 'สร้างคำร้องขอลบบัญชี เหตุผล: PRIVACY_CONCERNS - กังวลเรื่องความเป็นส่วนตัวของข้อมูลส่วนบุคคล',
-        changes: null
-    },
-    {
-        id: 'log_3',
-        timestamp: '2026-02-15T16:45:00Z',
-        action: 'APPROVED',
-        request: {
-            id: 'req_2',
-            type: 'deletion',
-            status: 'approved',
-            user: {
-                id: 'u2', firstName: 'Anong', lastName: 'Dee',
-                email: 'anong@example.com', profilePicture: null, role: 'PASSENGER'
-            }
-        },
-        performedBy: {
-            id: 'u_admin1', firstName: 'Somsak', lastName: 'Thongdee', role: 'ADMIN'
-        },
-        detail: 'อนุมัติคำร้องขอลบบัญชี adminNote: ตรวจสอบแล้วไม่มีปัญหาค้างอยู่ ดำเนินการลบบัญชีได้',
-        changes: { from: 'pending', to: 'approved' }
-    },
-    {
-        id: 'log_4',
-        timestamp: '2026-02-14T10:20:00Z',
-        action: 'REJECTED',
-        request: {
-            id: 'req_3',
-            type: 'deletion',
-            status: 'rejected',
-            user: {
-                id: 'u3', firstName: 'Preecha', lastName: 'Sukjai',
-                email: 'preecha@example.com', profilePicture: null, role: 'DRIVER'
-            }
-        },
-        performedBy: {
-            id: 'u_admin2', firstName: 'Pranee', lastName: 'Suksri', role: 'ADMIN'
-        },
-        detail: 'ปฏิเสธคำร้องขอลบบัญชี adminNote: ผู้ใช้มีการสอบสวนทางกฎหมายอยู่ ไม่สามารถลบบัญชีได้ในขณะนี้',
-        changes: { from: 'pending', to: 'rejected' }
-    },
-    {
-        id: 'log_5',
-        timestamp: '2026-02-14T15:05:00Z',
-        action: 'CREATED',
-        request: {
-            id: 'req_4',
-            type: 'incident',
-            status: 'open',
-            user: {
-                id: 'u4', firstName: 'Suda', lastName: 'Meesuk',
-                email: 'suda@example.com', profilePicture: null, role: 'PASSENGER'
-            }
-        },
-        performedBy: {
-            id: 'u4', firstName: 'Suda', lastName: 'Meesuk', role: 'PASSENGER'
-        },
-        detail: 'สร้างคำร้องแจ้งเหตุการณ์ (Ticket: incident) หัวข้อ: คนขับไม่มารับตามเวลา - จองรถเวลา 08:00 แต่คนขับมาถึง 09:30',
-        changes: null
-    },
-    {
-        id: 'log_6',
-        timestamp: '2026-02-14T16:30:00Z',
-        action: 'REPLY',
-        request: {
-            id: 'req_4',
-            type: 'incident',
-            status: 'open',
-            user: {
-                id: 'u4', firstName: 'Suda', lastName: 'Meesuk',
-                email: 'suda@example.com', profilePicture: null, role: 'PASSENGER'
-            }
-        },
-        performedBy: {
-            id: 'u_admin2', firstName: 'Pranee', lastName: 'Suksri', role: 'ADMIN'
-        },
-        detail: 'ตอบกลับคำร้อง (TicketReply): กำลังตรวจสอบข้อมูลการจองและติดต่อคนขับเพื่อหาสาเหตุ',
-        changes: null
-    },
-    {
-        id: 'log_7',
-        timestamp: '2026-02-13T09:00:00Z',
-        action: 'CREATED',
-        request: {
-            id: 'req_5',
-            type: 'behavior',
-            status: 'open',
-            user: {
-                id: 'u5', firstName: 'Wichai', lastName: 'Tongdee',
-                email: 'wichai@example.com', profilePicture: null, role: 'PASSENGER'
-            }
-        },
-        performedBy: {
-            id: 'u5', firstName: 'Wichai', lastName: 'Tongdee', role: 'PASSENGER'
-        },
-        detail: 'สร้างคำร้องรายงานพฤติกรรม (Ticket: behavior) หัวข้อ: คนขับพูดจาไม่สุภาพระหว่างเดินทาง',
-        changes: null
-    },
-    {
-        id: 'log_8',
-        timestamp: '2026-02-13T14:00:00Z',
-        action: 'REPLY',
-        request: {
-            id: 'req_5',
-            type: 'behavior',
-            status: 'in_progress',
-            user: {
-                id: 'u5', firstName: 'Wichai', lastName: 'Tongdee',
-                email: 'wichai@example.com', profilePicture: null, role: 'PASSENGER'
-            }
-        },
-        performedBy: {
-            id: 'u_admin1', firstName: 'Somsak', lastName: 'Thongdee', role: 'ADMIN'
-        },
-        detail: 'ตอบกลับ (TicketReply): ได้ตักเตือนคนขับแล้ว และจะติดตามพฤติกรรมต่อไป หากเกิดซ้ำจะพิจารณาระงับสิทธิ์',
-        changes: null
-    },
-    {
-        id: 'log_10',
-        timestamp: '2026-02-12T17:00:00Z',
-        action: 'CLOSED',
-        request: {
-            id: 'req_6',
-            type: 'incident',
-            status: 'closed',
-            user: {
-                id: 'u6', firstName: 'Nattaya', lastName: 'Srisuk',
-                email: 'nattaya@example.com', profilePicture: null, role: 'PASSENGER'
-            }
-        },
-        performedBy: {
-            id: 'u_admin2', firstName: 'Pranee', lastName: 'Suksri', role: 'ADMIN'
-        },
-        detail: 'ปิดคำร้อง - แก้ไขปัญหาเรียบร้อยแล้ว ผู้ใช้พอใจกับผลลัพธ์การแก้ไข',
-        changes: { from: 'resolved', to: 'closed' }
-    },
-    {
-        id: 'log_11',
-        timestamp: '2026-02-11T08:30:00Z',
-        action: 'APPROVED',
-        request: {
-            id: 'req_7',
-            type: 'deletion',
-            status: 'approved',
-            user: {
-                id: 'u7', firstName: 'Kittisak', lastName: 'Boonmee',
-                email: 'kittisak@example.com', profilePicture: null, role: 'PASSENGER'
-            }
-        },
-        performedBy: {
-            id: 'u_admin1', firstName: 'Somsak', lastName: 'Thongdee', role: 'ADMIN'
-        },
-        detail: 'อนุมัติคำร้องขอลบบัญชี adminNote: ผู้ใช้ยืนยันแล้ว ดำเนินการ soft delete และตั้ง deletedAt',
-        changes: { from: 'pending', to: 'approved' }
-    }
-])
+// ─── Real Data Fetching ───
+const auditLogs = ref([])
 
-// ─── Filtered list ───
-const filteredLogs = computed(() => {
-    let list = auditLogs.value
-
-    if (filters.q) {
-        const q = filters.q.toLowerCase()
-        list = list.filter(log => {
-            const performedByName = `${log.performedBy.firstName} ${log.performedBy.lastName}`.toLowerCase()
-            const ownerName = `${log.request.user.firstName} ${log.request.user.lastName}`.toLowerCase()
-            return performedByName.includes(q) ||
-                ownerName.includes(q) ||
-                log.request.user.email.toLowerCase().includes(q) ||
-                log.request.id.toLowerCase().includes(q) ||
-                log.detail.toLowerCase().includes(q)
+async function fetchLogs(page = 1) {
+    isLoading.value = true
+    loadError.value = ''
+    const config = useRuntimeConfig()
+    try {
+        const token = useCookie('token').value || (process.client ? localStorage.getItem('token') : '')
+        
+        // Call backend Audit API
+        const res = await $fetch('/audit/logs', {
+            baseURL: config.public.apiBase,
+            headers: { Authorization: `Bearer ${token}` },
+            query: {
+                page,
+                limit: pagination.limit,
+                search: filters.q,
+                action: filters.action,
+                // ... other filters
+            }
         })
+
+        if (res.success && res.data && res.data.logs) {
+             auditLogs.value = res.data.logs
+             pagination.total = res.data.pagination.total
+             pagination.totalPages = res.data.pagination.totalPages
+        } else {
+             auditLogs.value = []
+        }
+
+    } catch (err) {
+        console.error(err)
+        loadError.value = err.message || 'ไม่สามารถโหลด Audit Log ได้'
+    } finally {
+        isLoading.value = false
     }
+}
 
-    if (filters.action) {
-        list = list.filter(log => log.action === filters.action)
-    }
-
-    if (filters.requestType) {
-        list = list.filter(log => log.request.type === filters.requestType)
-    }
-
-    if (filters.adminId) {
-        list = list.filter(log => log.performedBy.id === filters.adminId)
-    }
-
-    if (filters.dateFrom) {
-        const from = new Date(filters.dateFrom)
-        list = list.filter(log => new Date(log.timestamp) >= from)
-    }
-
-    if (filters.dateTo) {
-        const to = new Date(filters.dateTo)
-        to.setHours(23, 59, 59, 999)
-        list = list.filter(log => new Date(log.timestamp) <= to)
-    }
-
-    // เรียงตามเวลาล่าสุดก่อน
-    list = [...list].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-
-    return list
-})
+// ─── Filtered list (Backend does filtering now) ───
+const filteredLogs = computed(() => auditLogs.value)
 
 // ─── Pagination ───
 const pagination = reactive({
     page: 1,
     limit: 20,
-    total: computed(() => filteredLogs.value.length)
+    total: 0,
+    totalPages: 1
 })
 
 const totalPages = computed(() =>
-    Math.max(1, Math.ceil(filteredLogs.value.length / pagination.limit))
+    Math.max(1, pagination.totalPages || Math.ceil((pagination.total || 0) / (pagination.limit || 20)))
 )
 
-const paginatedLogs = computed(() => {
-    const start = (pagination.page - 1) * pagination.limit
-    return filteredLogs.value.slice(start, start + pagination.limit)
-})
-
-const pageButtons = computed(() => {
-    const total = totalPages.value
-    const current = pagination.page
-    if (!total || total < 1) return []
-    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1)
-    const set = new Set([1, total, current])
-    if (current - 1 > 1) set.add(current - 1)
-    if (current + 1 < total) set.add(current + 1)
-    const pages = Array.from(set).sort((a, b) => a - b)
-    const out = []
-    for (let i = 0; i < pages.length; i++) {
-        if (i > 0 && pages[i] - pages[i - 1] > 1) out.push('…')
-        out.push(pages[i])
-    }
-    return out
-})
+const paginatedLogs = computed(() => auditLogs.value) // Already paginated from API
 
 function changePage(next) {
     if (next < 1 || next > totalPages.value) return
     pagination.page = next
+    fetchLogs(next)
 }
 
 function applyFilters() {
     pagination.page = 1
+    fetchLogs(1)
 }
+
+onMounted(() => {
+    fetchLogs()
+})
 
 function actionLabel(action) {
     const map = {
