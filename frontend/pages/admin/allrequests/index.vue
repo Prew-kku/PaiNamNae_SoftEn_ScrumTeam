@@ -230,44 +230,32 @@
         </main>
 
         <!-- Admin Note Modal -->
-        <div v-if="modal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal">
-            <div class="w-full max-w-md p-6 mx-4 bg-white rounded-lg shadow-xl">
-                <h3 class="mb-1 text-lg font-semibold text-gray-800">
-                    {{ modal.action === 'approve' ? 'อนุมัติคำร้อง' : 'ปฏิเสธคำร้อง' }}
-                </h3>
-                <p class="mb-4 text-sm text-gray-500">
-                    คำร้องของ {{ getUserDisplayName(modal.request?.user) }}
-                </p>
-
-                <template v-if="modal.action !== 'approve'">
-                    <label class="block mb-1 text-sm font-medium text-gray-700">หมายเหตุแอดมิน</label>
-                    <textarea v-model="modal.adminNote" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="ระบุหมายเหตุ (ไม่บังคับ)"></textarea>
-                </template>
-                <div v-else class="p-4 mb-4 text-sm text-yellow-700 bg-yellow-50 rounded-md">
-                    ยืนยันการอนุมัติ? ระบบจะทำการลบบัญชีและแจ้งเตือนผู้ใช้ทางอีเมลทันที
-                </div>
-
-                <div class="flex justify-end gap-3 mt-4">
-                    <button @click="closeModal"
-                        class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
-                        ยกเลิก
-                    </button>
-                    <button @click="confirmModal"
-                        class="px-4 py-2 text-sm text-white rounded-md cursor-pointer"
-                        :class="modal.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'">
-                        {{ modal.action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ' }}
-                    </button>
-                </div>
+        <ConfirmModal
+            :show="modal.show"
+            :title="modal.action === 'approve' ? 'อนุมัติคำร้อง' : 'ปฏิเสธคำร้อง'"
+            :message="`คำร้องของ ${getUserDisplayName(modal.request?.user)}`"
+            :confirm-text="modal.action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'"
+            :variant="modal.action === 'approve' ? 'primary' : 'danger'"
+            @confirm="confirmModal"
+            @cancel="closeModal"
+        >
+            <div v-if="modal.action !== 'approve'" class="mt-2">
+                <label class="block mb-1 text-sm font-medium text-gray-700">หมายเหตุแอดมิน</label>
+                <textarea v-model="modal.adminNote" rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="ระบุหมายเหตุ (บังคับสำหรับการปฏิเสธ)"></textarea>
             </div>
-        </div>
+            <div v-else class="p-4 text-sm text-yellow-700 bg-yellow-50 rounded-md">
+                ยืนยันการอนุมัติ? ระบบจะทำการลบบัญชีและแจ้งเตือนผู้ใช้ทางอีเมลทันที
+            </div>
+        </ConfirmModal>
     </div>
 </template>
 
 <script setup>
 import AdminHeader from '~/components/admin/AdminHeader.vue'
 import AdminSidebar from '~/components/admin/AdminSidebar.vue'
+import ConfirmModal from '~/components/ConfirmModal.vue'
 import { useToast } from '~/composables/useToast'
 
 const { toast } = useToast()
