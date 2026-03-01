@@ -39,7 +39,7 @@
                         </div>
                         <div class="grid grid-cols-1 gap-6 p-4 sm:p-6 sm:grid-cols-2">
                             <div class="flex items-center gap-4 sm:col-span-2">
-                                <img :src="request.user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(request.user.firstName || 'U')}&background=random&size=80`"
+                                <img :src="request.user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(request.user?.firstName || 'U')}&background=random&size=80`"
                                     class="object-cover w-16 h-16 rounded-full" alt="avatar" />
                                 <div>
                                     <div class="text-lg font-medium text-gray-900">
@@ -50,7 +50,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 uppercase">อีเมล</label>
-                                <p class="mt-1 text-gray-900">{{ request.user.email }}</p>
+                                <p class="mt-1 text-gray-900">{{ request.user?.email }}</p>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 uppercase">บทบาท</label>
@@ -456,8 +456,8 @@ function formatDate(iso) {
 
 function getUserDisplayName(user) {
     if (!user) return '-'
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
-    return fullName || user.username || user.email || user.id || '-'
+    const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
+    return fullName || user.username || user?.email || user.id || '-'
 }
 
 function extractProvince(location) {

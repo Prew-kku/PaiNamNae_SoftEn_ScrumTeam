@@ -91,7 +91,7 @@ const getAllUsers = async () => {
     /*
     const safeUsers = users.map(user => ({
       id: user.id,
-      email: user.email,
+      email: user?.email,
       username: user.username,
       // ... เอาฟิลด์อื่นๆ ที่ต้องการมาใส่ ...
     }));
