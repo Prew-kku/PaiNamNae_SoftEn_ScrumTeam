@@ -89,7 +89,7 @@ model User {
   notification          Notification[]
   createdRoutes         Route[]             @relation("DriverRoutes")
   bookings              Booking[]           @relation("PassengerBookings")
-  deletionRequest       DeletionRequest?
+  deletionRequests      DeletionRequest[]
 
   @@index([role])
   @@index([isActive])
@@ -217,12 +217,23 @@ model Booking {
 enum DeletionStatus {
   PENDING         // รอ Admin อนุมัติ
   APPROVED        // อนุมัติแล้ว รอครบ 90 วัน
-  REJECTED        // ปฏิเสธ (เก็บถาวร)
+  CANCELLED       // ผู้ใช้ยกเลิกคำขอลบ
+  REJECTED        // ปฏิเสธ 
+  DELETED         // ประมวลผลลบ/ทำให้นิรนามแล้ว
+}
+
+enum DeletionAuditStatus {
+  REQUESTED
+  CANCELLED
+  APPROVED
+  REJECTED
+  ANONYMIZED
+  DELETED
 }
 
 model DeletionRequest {
   id                String         @id @default(cuid())
-  userId            String         @unique
+  userId            String
   user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   reason            String?        
   backupData        Json           @db.Json // เก็บข้อมูลทั้งหมดของบัญชีตอนที่ขอลบ
@@ -232,14 +243,25 @@ model DeletionRequest {
   scheduledDeleteAt DateTime?      // วันที่จะ Hard Delete
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+  audits            DeletionAudit[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([requestedAt])
 }
 model DeletionAudit {
-  id              String   @id @default(cuid())
-  originalUserId  String   // เก็บ ID เดิมไว้อ้างอิง
-  originalEmail   String?  // เก็บ Email เดิม 
-  deletedAt       DateTime @default(now())
+  id              String              @id @default(cuid())
+  requestId       String?
+  request         DeletionRequest?    @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  originalUserId  String              // เก็บ ID เดิมไว้อ้างอิง
+  originalEmail   String?             // เก็บ Email เดิม 
+  eventTime       DateTime            @default(now())
   reason          String?
-  status          String   // 'COMPLETED'
-  performedBy     String?  // 'SYSTEM_CRON'
-  backupData      Json?     @db.Json
+  status          DeletionAuditStatus
+  performedBy     String?             // 'USER' | 'ADMIN' | 'SYSTEM_CRON'
+  backupData      Json?               @db.Json
+
+  @@index([requestId])
+  @@index([status])
+  @@index([eventTime])
 }

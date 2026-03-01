@@ -1,0 +1,1907 @@
+{
+  "info": {
+    "_postman_id": "f629ffa0-1f88-44b4-8ebc-4c37b006e475",
+    "name": "API Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "46855788",
+    "_collection_link": "https://go.postman.co/collection/46855788-f629ffa0-1f88-44b4-8ebc-4c37b006e475?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "login for token (user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login user: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"Login user: has token\", () => {",
+                  "      pm.expect(res.success).to.be.true;",
+                  "      pm.expect(res.data.token).to.be.a(\"string\");",
+                  "  });",
+                  "",
+                  "  pm.environment.set(\"userToken\", res.data.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "  { \"email\": \"{{userEmail}}\", \"password\": \"{{userPassword}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cleanup: cancel any pending deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cleanup: reactivate account if left deactivated from previous run",
+                  "// 200 = cancelled OK, 404 = no active request (both are fine)",
+                  "pm.test(\"cleanup: account ready (200 or 404)\", () => {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "login for token (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login admin: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"Login admin: has token\", () => {",
+                  "      pm.expect(res.success).to.be.true;",
+                  "      pm.expect(res.data.token).to.be.a(\"string\");",
+                  "  });",
+                  "",
+                  "  pm.environment.set(\"adminToken\", res.data.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{adminEmail}}\",\n    \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "No Token Tests",
+      "item": [
+        {
+          "name": "delete by user (no token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "  pm.test(\"TC-API-08: 401 Unauthorized\", () => {",
+                  "      pm.response.to.have.status(401);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-08: Not authorized, no token\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Not authorized, no token\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"password\": \"{{userPassword}}\",\n    \"reason\": \"ไม่ต้องการใช้งานแล้ว\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all requests (no token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-11: 401 Unauthorized\", () => {",
+                  "      pm.response.to.have.status(401);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-11: Not authorized, no token\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Not authorized, no token\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Validation Tests",
+      "item": [
+        {
+          "name": "wrong password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-05: 401 Unauthorized\", () => {",
+                  "      pm.response.to.have.status(401);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-05: Incorrect password\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Incorrect password\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n   \"password\": \"wrongpassword123\",\n    \"reason\": \"ไม่ต้องการใช้งานแล้ว\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "no password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-06: 400 Bad Request\", () => {",
+                  "      pm.response.to.have.status(400);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-06: Validation error password required\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.include(\"Password is required\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reason\": \"ไม่ต้องการใช้งานแล้ว\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Role Tests",
+      "item": [
+        {
+          "name": "user with admin's endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-10: 403 Forbidden\", () => {",
+                  "      pm.response.to.have.status(403);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-10: Admin access required\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Forbidden: Admin access required\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "approve by user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-14: 403 Forbidden\", () => {",
+                  "      pm.response.to.have.status(403);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-14: Admin access required\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Forbidden: Admin access required\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/fakeid/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests",
+                "fakeid",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Empty List",
+      "item": [
+        {
+          "name": "get all requests (empty)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-12: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-12: no PENDING requests at start\", () => {",
+                  "      pm.expect(res).to.be.an(\"object\");",
+                  "      const pending = res.data.filter(r => r.status === \"PENDING\");",
+                  "      pm.expect(pending).to.be.an(\"array\").that.is.empty;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reject Flow",
+      "item": [
+        {
+          "name": "delete by user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-01: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-01: Deletion requested message\", () => {",
+                  "      pm.expect(res.message).to.include(\"Deletion requested\");",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "  {\n    \"password\": \"{{userPassword}}\",\n    \"reason\": \"ไม่ต้องการใช้งานแล้ว\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "duplicate delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-07: 401 Unauthorized\", () => {",
+                  "      pm.response.to.have.status(401);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-07: token failed (account suspended)\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Not authorized, token failed\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "  {\n    \"password\": \"{{userPassword}}\",\n    \"reason\": \"ไม่ต้องการใช้งานแล้ว\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "  pm.test(\"TC-API-02: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "",
+                  "  pm.test(\"TC-API-02: is paginated response\", () => {",
+                  "      pm.expect(res).to.be.an(\"object\");",
+                  "      pm.expect(res.data).to.be.an(\"array\").that.is.not.empty;",
+                  "  });",
+                  "",
+                  "  pm.test(\"TC-API-02: latest request is PENDING\", () => {",
+                  "      pm.expect(res.data[0].status).to.equal(\"PENDING\");",
+                  "  });",
+                  "",
+                  "  // ดึง ID จาก index 0 (request ล่าสุด = ที่เพิ่งสร้างใน TC-API-01)",
+                  "  if (res.data.length > 0) {",
+                  "      pm.environment.set(\"deletionRequestId\", res.data[0].id);",
+                  "      console.log(\"[TC-API-02] deletionRequestId saved:\", res.data[0].id);",
+                  "  } else {",
+                  "      console.warn(\"[TC-API-02] WARNING: No requests found! TC-API-01 might have failed.\");",
+                  "  }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reject fake id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-13 (reject): 404 Not Found\", () => {",
+                  "      pm.response.to.have.status(404);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-13 (reject): Request not found\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Request not found\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/fakeid/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests",
+                "fakeid",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "approve fake id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-13 (approve): 404 Not Found\", () => {",
+                  "      pm.response.to.have.status(404);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-13 (approve): Request not found\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Request not found\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/fakeid/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests",
+                "fakeid",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "rejected deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-04: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-04: Deletion request rejected\", () => {",
+                  "      pm.expect(res.message).to.equal(\"Deletion request rejected and retained for audit. Account reactivated.\");",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/{{deletionRequestId}}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests",
+                "{{deletionRequestId}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Approve flow",
+      "item": [
+        {
+          "name": "re-login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Re-login: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"Re-login: has new token\", () => {",
+                  "      pm.expect(res.success).to.be.true;",
+                  "      pm.expect(res.data.token).to.be.a(\"string\");",
+                  "  });",
+                  "",
+                  "  // อัปเดต userToken ใหม่ (account ถูก restore หลัง reject)",
+                  "  pm.environment.set(\"userToken\", res.data.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "  { \"email\": \"{{userEmail}}\", \"password\": \"{{userPassword}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete by user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-01: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-01: Deletion requested message\", () => {",
+                  "      pm.expect(res.message).to.include(\"Deletion requested\");",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "  {\n    \"password\": \"{{userPassword}}\",\n    \"reason\": \"ไม่ต้องการใช้งานแล้ว\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "  pm.test(\"TC-API-02: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "",
+                  "  pm.test(\"TC-API-02: is paginated response\", () => {",
+                  "      pm.expect(res).to.be.an(\"object\");",
+                  "      pm.expect(res.data).to.be.an(\"array\").that.is.not.empty;",
+                  "  });",
+                  "",
+                  "  pm.test(\"TC-API-02: latest request is PENDING\", () => {",
+                  "      pm.expect(res.data[0].status).to.equal(\"PENDING\");",
+                  "  });",
+                  "",
+                  "  // ดึง ID จาก index 0 (request ล่าสุด = ที่เพิ่งสร้างใน TC-API-01)",
+                  "  if (res.data.length > 0) {",
+                  "      pm.environment.set(\"deletionRequestId\", res.data[0].id);",
+                  "      console.log(\"[TC-API-02] deletionRequestId saved:\", res.data[0].id);",
+                  "  } else {",
+                  "      console.warn(\"[TC-API-02] WARNING: No requests found! TC-API-01 might have failed.\");",
+                  "  }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "approved deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-03: 200 OK\", () => {",
+                  "      pm.response.to.have.status(200);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-03: Approved. Scheduled for hard delete in 90 days.\", () => {",
+                  "      pm.expect(res.message).to.equal(\"Deletion request approved and scheduled for anonymization.\");",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/{{deletionRequestId}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests",
+                "{{deletionRequestId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "re-approve",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Tests tab",
+                  "  pm.test(\"TC-API-15: 400 Bad Request\", () => {",
+                  "      pm.response.to.have.status(400);",
+                  "  });",
+                  "",
+                  "  const res = pm.response.json();",
+                  "  pm.test(\"TC-API-15: Only pending deletion request can be approved\", () => {",
+                  "      pm.expect(res.success).to.be.false;",
+                  "      pm.expect(res.message).to.equal(\"Only pending deletion request can be approved\");",
+                  "      pm.expect(res.data).to.be.null;",
+                  "  });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/{{deletionRequestId}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "deletion",
+                "admin",
+                "requests",
+                "{{deletionRequestId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "delete by user (token expi)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"TC-API-09: 401 Unauthorized\", () => {",
+              "      pm.response.to.have.status(401);",
+              "  });",
+              "",
+              "  const res = pm.response.json();",
+              "  pm.test(\"TC-API-09: Not authorized, token failed\", () => {",
+              "      pm.expect(res.success).to.be.false;",
+              "      pm.expect(res.message).to.equal(\"Not authorized, token failed\");",
+              "      pm.expect(res.data).to.be.null;",
+              "  });"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{expiredToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"password\": \"{{userPassword}}\",\n    \"reason\": \"ไม่ต้องการใช้งานแล้ว\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deletion/request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "deletion",
+            "request"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cancel Approved Flow",
+      "item": [
+        {
+          "name": "cancel APPROVED deletion (TC-API-17)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-17: 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-17: Deletion request cancelled from APPROVED status\", () => {",
+                  "    pm.expect(res.message).to.equal(\"Deletion request cancelled. Account reactivated.\");",
+                  "    pm.expect(res.cancelledStatus).to.equal(\"APPROVED\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cancel Flow",
+      "item": [
+        {
+          "name": "cancel no token (TC-API-19)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-19: 401 Unauthorized\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-19: Not authorized, no token\", () => {",
+                  "    pm.expect(res.success).to.be.false;",
+                  "    pm.expect(res.message).to.equal(\"Not authorized, no token\");",
+                  "    pm.expect(res.data).to.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "re-login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Re-login: 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "pm.test(\"Re-login: has token\", () => {",
+                  "    pm.expect(res.success).to.be.true;",
+                  "    pm.expect(res.data.token).to.be.a(\"string\");",
+                  "});",
+                  "pm.environment.set(\"userToken\", res.data.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"{{userEmail}}\", \"password\": \"{{userPassword}}\" }",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete by user (TC-API-01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-01: 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-01: Deletion requested\", () => {",
+                  "    pm.expect(res.message).to.include(\"Deletion requested\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"password\": \"{{userPassword}}\",\n    \"reason\": \"ไม่ต้องการใช้งานแล้ว\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "request"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cancel PENDING deletion (TC-API-16)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-16: 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-16: Deletion request cancelled (PENDING)\", () => {",
+                  "    pm.expect(res.message).to.equal(\"Deletion request cancelled. Account reactivated.\");",
+                  "    pm.expect(res.cancelledStatus).to.equal(\"PENDING\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cancel again - no active request (TC-API-18)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-18: 404 Not Found\", () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-18: No cancellable deletion request found\", () => {",
+                  "    pm.expect(res.success).to.be.false;",
+                  "    pm.expect(res.message).to.equal(\"No cancellable deletion request found\");",
+                  "    pm.expect(res.data).to.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Single Request",
+      "item": [
+        {
+          "name": "re-login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Re-login: 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "pm.environment.set(\"userToken\", res.data.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"{{userEmail}}\", \"password\": \"{{userPassword}}\" }",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete by user (setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"setup: 200 OK\", () => { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"password\": \"{{userPassword}}\",\n    \"reason\": \"ทดสอบ get by id\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "request"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all requests (setup - save ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"setup: 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.length > 0) {",
+                  "    pm.environment.set(\"deletionRequestId\", res.data[0].id);",
+                  "    console.log(\"[setup] deletionRequestId saved:\", res.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "admin", "requests"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get single request by real ID (TC-API-20)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-20: 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-20: has id, user, audits\", () => {",
+                  "    pm.expect(res).to.have.property(\"id\");",
+                  "    pm.expect(res).to.have.property(\"userId\");",
+                  "    pm.expect(res).to.have.property(\"user\");",
+                  "    pm.expect(res.audits).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"TC-API-20: status is PENDING\", () => {",
+                  "    pm.expect(res.status).to.equal(\"PENDING\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/{{deletionRequestId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "admin", "requests", "{{deletionRequestId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get single request by fake ID (TC-API-21)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-21: 404 Not Found\", () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-21: Request not found\", () => {",
+                  "    pm.expect(res.success).to.be.false;",
+                  "    pm.expect(res.message).to.equal(\"Request not found\");",
+                  "    pm.expect(res.data).to.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/fakeid",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "admin", "requests", "fakeid"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cancel to clean up",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"cleanup: 200 OK\", () => { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "" },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Reject with Reason",
+      "item": [
+        {
+          "name": "re-login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Re-login: 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "pm.environment.set(\"userToken\", res.data.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"{{userEmail}}\", \"password\": \"{{userPassword}}\" }",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete by user (setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"setup: 200 OK\", () => { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"password\": \"{{userPassword}}\",\n    \"reason\": \"ทดสอบ reject with reason\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/request",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "request"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all requests (setup - save ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"setup: 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.length > 0) {",
+                  "    pm.environment.set(\"deletionRequestId\", res.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "admin", "requests"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reject with adminReason (TC-API-22)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-22: 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-22: Deletion rejected with admin reason\", () => {",
+                  "    pm.expect(res.message).to.equal(\"Deletion request rejected and retained for audit. Account reactivated.\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"adminReason\": \"บัญชีมี booking ที่ยังไม่สิ้นสุด กรุณาจัดการก่อนส่งคำขอใหม่\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests/{{deletionRequestId}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "admin", "requests", "{{deletionRequestId}}", "reject"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Filter by Status",
+      "item": [
+        {
+          "name": "filter by status=PENDING (TC-API-23)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-23: 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-23: paginated response with pagination object\", () => {",
+                  "    pm.expect(res).to.be.an(\"object\");",
+                  "    pm.expect(res.data).to.be.an(\"array\");",
+                  "    pm.expect(res.pagination).to.be.an(\"object\");",
+                  "    pm.expect(res.pagination).to.have.property(\"total\");",
+                  "    pm.expect(res.pagination).to.have.property(\"page\");",
+                  "});",
+                  "",
+                  "pm.test(\"TC-API-23: all returned requests are PENDING\", () => {",
+                  "    res.data.forEach(r => {",
+                  "        pm.expect(r.status).to.equal(\"PENDING\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests?status=PENDING",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "admin", "requests"],
+              "query": [
+                { "key": "status", "value": "PENDING" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "filter by status=REJECTED (TC-API-23b)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"TC-API-23b: 200 OK\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const res = pm.response.json();",
+                  "pm.test(\"TC-API-23b: all returned requests are REJECTED\", () => {",
+                  "    res.data.forEach(r => {",
+                  "        pm.expect(r.status).to.equal(\"REJECTED\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deletion/admin/requests?status=REJECTED",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deletion", "admin", "requests"],
+              "query": [
+                { "key": "status", "value": "REJECTED" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
