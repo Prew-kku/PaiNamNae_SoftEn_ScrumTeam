@@ -10,7 +10,7 @@ export default defineNuxtConfig({
       // ถ้าหาไม่เจอ (เช่นลืมใส่) จะใช้ localhost เป็นค่าสำรอง
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000/api/',
       
-      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
+      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyA0_nkEKngbvQJ_K5uLrfVlHMC0WBWWRYI'
     },
   },
 

@@ -273,7 +273,7 @@
             @click="closeMobileSidebar"></div>
 
         <!-- Confirm Delete Modal -->
-        <ConfirmModal :show="showDelete" :title="`ลบผู้ใช้${deletingUser?.email ? ' : ' + deletingUser.email : ''}`"
+        <ConfirmModal :show="showDelete" :title="`ลบผู้ใช้${deletingUser?.email ? ' : ' + deletinguser?.email : ''}`"
             message="การลบนี้เป็นการลบถาวร ข้อมูลทั้งหมดจะถูกลบและไม่สามารถกู้คืนได้ คุณต้องการดำเนินการต่อหรือไม่?"
             confirmText="ลบถาวร" cancelText="ยกเลิก" variant="danger" @confirm="confirmDelete" @cancel="cancelDelete" />
     </div>
@@ -506,7 +506,7 @@ async function confirmDelete() {
     const user = deletingUser.value
     try {
         await deleteUser(user.id)
-        toast.success('ลบผู้ใช้เรียบร้อย', `${user.email || user.username || user.id} ถูกลบถาวรแล้ว`)
+        toast.success('ลบผู้ใช้เรียบร้อย', `${user?.email || user.username || user.id} ถูกลบถาวรแล้ว`)
         cancelDelete()
         fetchUsers(Math.min(pagination.page, totalPages.value))
     } catch (err) {
