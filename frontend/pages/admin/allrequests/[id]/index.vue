@@ -269,40 +269,29 @@
         </main>
 
         <!-- Confirm Modal -->
-        <div v-if="modal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal">
-            <div class="w-full max-w-md p-6 mx-4 bg-white rounded-lg shadow-xl">
-                <h3 class="mb-1 text-lg font-semibold text-gray-800">{{ modalTitle }}</h3>
-                <p class="mb-4 text-sm text-gray-500">
-                    คำร้องของ {{ getUserDisplayName(request.user) }}
-                </p>
-
-                <!-- Admin Note (เฉพาะ deletion) -->
-                <div v-if="request.type === 'deletion'" class="mb-4">
-                    <label class="block mb-1 text-sm font-medium text-gray-700">หมายเหตุแอดมิน</label>
-                    <textarea v-model="modal.adminNote" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="ระบุหมายเหตุ (ไม่บังคับ)"></textarea>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <button @click="closeModal"
-                        class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
-                        ยกเลิก
-                    </button>
-                    <button @click="confirmModal"
-                        class="px-4 py-2 text-sm text-white rounded-md cursor-pointer"
-                        :class="modalConfirmClass">
-                        {{ modalConfirmText }}
-                    </button>
-                </div>
+        <ConfirmModal
+            :show="modal.show"
+            :title="modalTitle"
+            :message="`คำร้องของ ${getUserDisplayName(request?.user)}`"
+            :confirm-text="modalConfirmText"
+            :variant="modalVariant"
+            @confirm="confirmModal"
+            @cancel="closeModal"
+        >
+            <div v-if="request?.type === 'deletion'" class="mt-2">
+                <label class="block mb-1 text-sm font-medium text-gray-700">หมายเหตุแอดมิน</label>
+                <textarea v-model="modal.adminNote" rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="ระบุหมายเหตุ (ไม่บังคับ)"></textarea>
             </div>
-        </div>
+        </ConfirmModal>
     </div>
 </template>
 
 <script setup>
 import AdminHeader from '~/components/admin/AdminHeader.vue'
 import AdminSidebar from '~/components/admin/AdminSidebar.vue'
+import ConfirmModal from '~/components/ConfirmModal.vue'
 
 const route = useRoute()
 const requestId = route.params.id
@@ -526,14 +515,8 @@ const modalConfirmText = computed(() => {
     return map[modal.action] || 'ยืนยัน'
 })
 
-const modalConfirmClass = computed(() => {
-    const map = {
-        'approve': 'bg-emerald-600 hover:bg-emerald-700',
-        'reject': 'bg-red-600 hover:bg-red-700',
-        'resolve': 'bg-emerald-600 hover:bg-emerald-700',
-        'close': 'bg-gray-600 hover:bg-gray-700'
-    }
-    return map[modal.action] || 'bg-blue-600 hover:bg-blue-700'
+const modalVariant = computed(() => {
+    return (modal.action === 'reject' || modal.action === 'close') ? 'danger' : 'primary'
 })
 
 function openModal(action) {

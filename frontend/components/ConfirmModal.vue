@@ -18,11 +18,18 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3 rounded-b-lg">
-                    <button @click="handleCancel" type="button" class="btn-secondary">
+                <div v-if="$slots.default" class="px-6 pb-4">
+                    <slot />
+                </div>
+
+                <div class="flex border-t border-gray-200 rounded-b-lg overflow-hidden">
+                    <button @click="handleCancel" type="button"
+                        class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                         {{ cancelText }}
                     </button>
-                    <button @click="handleConfirm" type="button" :class="['btn-primary', confirmButtonClass]">
+                    <div class="w-px bg-gray-200"></div>
+                    <button @click="handleConfirm" type="button"
+                        :class="['flex-1 px-4 py-3 text-sm font-medium transition-colors', confirmButtonClass]">
                         {{ confirmText }}
                     </button>
                 </div>
@@ -74,8 +81,8 @@ const handleCancel = () => {
 // Computed properties for dynamic styling based on variant
 const confirmButtonClass = computed(() => {
     return props.variant === 'danger'
-        ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-        : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500';
+        ? 'text-red-600 hover:bg-red-50'
+        : 'text-blue-600 hover:bg-blue-50';
 });
 
 const iconContainerClass = computed(() => {

@@ -1,3 +1,4 @@
+<!-- pichamon395-4: ไฟล์นี้ไม่ได้ใช้งาน (เก็บไว้เป็นประวัติการพัฒนาเท่านั้น) -->
 <!-- frontend/pages/myRoute/index.vue -->
 <template>
     <div>

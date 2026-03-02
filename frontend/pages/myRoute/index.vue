@@ -46,8 +46,18 @@
                                             <span class="status-badge" :class="{
                                                 'status-confirmed': route.status === 'available',
                                                 'status-pending': route.status === 'full',
+                                                'status-in-transit': route.status === 'in_transit',
+                                                'status-arrived': route.status === 'arrived',
+                                                'status-completed': route.status === 'completed',
+                                                'status-cancelled': route.status === 'cancelled',
                                             }">
-                                                {{ route.status === 'available' ? 'เปิดรับผู้โดยสาร' : 'เต็ม' }}
+                                                {{ route.status === 'available' ? 'เปิดรับผู้โดยสาร'
+                                                    : route.status === 'full' ? 'เต็ม'
+                                                    : route.status === 'in_transit' ? 'กำลังเดินทาง'
+                                                    : route.status === 'arrived' ? 'รอยืนยันชำระเงิน'
+                                                    : route.status === 'completed' ? 'เสร็จสิ้น'
+                                                    : route.status === 'cancelled' ? 'ยกเลิก'
+                                                    : route.status }}
                                             </span>
                                         </div>
                                         <p class="mt-1 text-sm text-gray-600">
@@ -163,8 +173,27 @@
                                 </div>
 
                                 <!-- ปุ่มขวาล่าง -->
-                                <div class="flex justify-end" :class="{ 'mt-4': selectedTripId !== route.id }">
-                                    <NuxtLink :to="`/myRoute/${route.id}/edit`"
+                                <div class="flex justify-end gap-3" :class="{ 'mt-4': selectedTripId !== route.id }">
+                                    <!-- ขั้น 1: แจ้งถึงที่หมาย (ก่อน arrived) -->
+                                    <button
+                                        v-if="['available', 'full', 'in_transit'].includes(route.status)"
+                                        @click.stop="openConfirmModal(route, 'arrive')"
+                                        class="px-4 py-2 text-sm text-white transition duration-200 bg-green-600 rounded-md hover:bg-green-700">
+                                        ถึงที่หมายแล้ว
+                                    </button>
+                                    <!-- ขั้น 2: ตรวจสอบการชำระเงิน (หลัง arrived หรือ completed ที่ยังค้างอยู่) -->
+                                    <button
+                                        v-else-if="['arrived', 'completed'].includes(route.status)"
+                                        @click.stop="openConfirmModal(route, 'complete-route')"
+                                        class="px-4 py-2 text-sm text-white transition duration-200 bg-blue-600 rounded-md hover:bg-blue-700 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        {{ route.status === 'completed' ? 'ประวัติการชำระเงิน' : 'ยืนยันการชำระเงิน' }}
+                                    </button>
+                                    <NuxtLink
+                                        v-if="!['arrived', 'completed'].includes(route.status)"
+                                        :to="`/myRoute/${route.id}/edit`"
                                         class="px-4 py-2 text-sm text-white transition duration-200 bg-blue-600 rounded-md hover:bg-blue-700"
                                         @click.stop>
                                         แก้ไขเส้นทาง
@@ -382,11 +411,420 @@
         <ConfirmModal :show="isModalVisible" :title="modalContent.title" :message="modalContent.message"
             :confirmText="modalContent.confirmText" :variant="modalContent.variant" @confirm="handleConfirmAction"
             @cancel="closeConfirmModal" />
+
+        <!-- Payment Verification Modal -->
+        <div v-if="isPaymentModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">ตรวจสอบการชำระเงิน</h3>
+                        <p class="text-sm text-gray-500 mt-0.5" v-if="paymentModalRoute">
+                            {{ paymentModalRoute.origin }} → {{ paymentModalRoute.destination }}
+                        </p>
+                    </div>
+                    <button @click="isPaymentModalVisible = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- Body -->
+                <div class="px-6 py-4 space-y-4 max-h-[28rem] overflow-y-auto">
+                    <p v-if="!paymentModalRoute?.passengers?.length" class="text-sm text-center text-gray-500 py-4">
+                        ไม่มีผู้โดยสารในเส้นทางนี้
+                    </p>
+
+                    <!-- ===== READ-ONLY MODE: ทุกคนอนุมัติแล้ว ===== -->
+                    <template v-if="isReadOnlyMode">
+                        <div v-for="p in paymentModalRoute?.passengers" :key="p.id"
+                            class="p-4 border border-green-200 bg-green-50 rounded-lg">
+                            <div class="flex items-center gap-3 mb-2.5">
+                                <img :src="p.image" :alt="p.name" class="w-10 h-10 rounded-full object-cover" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium text-gray-900 text-sm truncate">{{ p.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ p.seats }} ที่นั่ง</div>
+                                </div>
+                                <button @click="showReceipt(p)"
+                                    class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-green-700 border border-green-300 rounded-md hover:bg-green-100 transition-colors flex-shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    ใบเสร็จ
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <!-- Payment method badge -->
+                                <div v-if="p.paymentMethod === 'CASH'" class="flex items-center gap-1.5 text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-md">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                    เงินสด
+                                </div>
+                                <div v-else-if="p.paymentMethod === 'FRIEND_PAID'" class="flex items-center gap-1.5 text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    เพื่อนร่วมทางจ่ายให้
+                                </div>
+                                <div v-else class="flex items-center gap-1.5 text-xs text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-md">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    โอนเงิน
+                                </div>
+                                <!-- Amount + status -->
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900">฿{{ (paymentModalRoute.pricePerSeat * p.seats).toLocaleString() }}</span>
+                                    <span class="flex items-center gap-1 px-2 py-0.5 text-xs text-green-700 bg-green-100 rounded-full font-medium">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        ชำระแล้ว
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- ===== INTERACTIVE MODE ===== -->
+                    <template v-else>
+                    <div v-for="p in paymentModalRoute?.passengers" :key="p.id"
+                        class="p-4 border rounded-lg transition-colors"
+                        :class="slipRejectMap[p.id] ? 'border-red-300 bg-red-50' : paymentVerifyMap[p.id] ? 'border-green-300 bg-green-50' : 'border-gray-200'">
+                        <!-- Passenger info -->
+                        <div class="flex items-center gap-3 mb-3">
+                            <img :src="p.image" :alt="p.name" class="w-10 h-10 rounded-full object-cover" />
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 text-sm truncate">{{ p.name }}</div>
+                                <div class="text-xs text-gray-500">{{ p.seats }} ที่นั่ง · ฿{{ (paymentModalRoute.pricePerSeat * p.seats).toLocaleString() }}</div>
+                            </div>
+                            <!-- ปุ่มใบเสร็จ — แสดงเมื่อกด "ยืนยันถึงที่หมาย" แล้วเท่านั้น -->
+                            <button v-if="confirmedVerifyHistory[paymentModalRoute?.id]?.[p.id]" @click="showReceipt(p)"
+                                class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-green-700 border border-green-300 rounded-md hover:bg-green-100 transition-colors flex-shrink-0"
+                                title="ดู/ส่งใบเสร็จ">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                ใบเสร็จ
+                            </button>
+                        </div>
+                        <!-- FRIEND_PAID: เพื่อนร่วมทางจ่ายให้ -->
+                        <div v-if="p.paymentMethod === 'FRIEND_PAID'"
+                            class="flex items-center justify-between gap-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span class="text-sm text-blue-800 font-medium">เพื่อนร่วมทางชำระให้</span>
+                            </div>
+                            <label class="flex items-center gap-2 cursor-pointer flex-shrink-0">
+                                <input type="checkbox" :checked="paymentVerifyMap[p.id]"
+                                    :disabled="lockedVerifyMap[p.id]"
+                                    @change="setVerify(p.id, $event.target.checked)"
+                                    :class="['w-5 h-5 rounded text-blue-600', lockedVerifyMap[p.id] ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer']" />
+                                <span class="text-sm text-gray-700 whitespace-nowrap">ยืนยันแล้ว</span>
+                            </label>
+                        </div>
+                        <!-- CASH payment -->
+                        <div v-else-if="p.paymentMethod === 'CASH'" class="flex items-center gap-3">
+                            <div class="flex items-center gap-2 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-md flex-1">
+                                <svg class="w-4 h-4 text-yellow-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span class="text-sm text-yellow-800 font-medium">ชำระเงินสด</span>
+                            </div>
+                            <label class="flex items-center gap-2 cursor-pointer flex-shrink-0">
+                                <input type="checkbox" :checked="paymentVerifyMap[p.id]"
+                                    :disabled="lockedVerifyMap[p.id]"
+                                    @change="setVerify(p.id, $event.target.checked)"
+                                    :class="['w-5 h-5 rounded text-green-600', lockedVerifyMap[p.id] ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer']" />
+                                <span class="text-sm text-gray-700 whitespace-nowrap">รับเงินสดแล้ว</span>
+                            </label>
+                        </div>
+                        <!-- SLIP payment -->
+                        <div v-else-if="p.paymentMethod === 'SLIP'">
+                            <!-- สถานะปฏิเสธแล้ว -->
+                            <div v-if="slipRejectMap[p.id]"
+                                class="px-3 py-2 bg-red-50 border border-red-200 rounded-md space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span class="text-sm text-red-700 font-medium">สลีปไม่ถูกต้อง — รอผู้โดยสารส่งหลักฐานใหม่</span>
+                                </div>
+                                <p v-if="slipRejectReasonMap[p.id]" class="text-xs text-red-500 pl-6">
+                                    เหตุผล: {{ slipRejectReasonMap[p.id] }}
+                                </p>
+                            </div>
+                            <!-- สถานะปกติ -->
+                            <div v-else>
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md flex-1">
+                                        <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span class="text-sm text-blue-800 font-medium">โอนเงิน</span>
+                                        <span v-if="p.paymentSlipUrl" class="text-xs text-blue-600">(มีสลีป)</span>
+                                        <span v-else class="text-xs text-gray-400">(ยังไม่มีสลีป)</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        <!-- ดูสลีป -->
+                                        <button v-if="p.paymentSlipUrl" @click="slipPreviewUrl = p.paymentSlipUrl"
+                                            class="p-1.5 text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
+                                            title="ดูสลีป">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                        <!-- ปุ่มปฏิเสธสลีป -->
+                                        <button v-if="p.paymentSlipUrl && !lockedVerifyMap[p.id] && pendingRejectPassengerId !== p.id"
+                                            @click="startRejectSlip(p.id)"
+                                            class="p-1.5 text-red-500 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                                            title="สลีปไม่ถูกต้อง">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                        <!-- checkbox ยืนยันสลีป -->
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" :checked="paymentVerifyMap[p.id]"
+                                                :disabled="!p.paymentSlipUrl || lockedVerifyMap[p.id]"
+                                                @change="setVerify(p.id, $event.target.checked)"
+                                                :class="['w-5 h-5 rounded', !p.paymentSlipUrl || lockedVerifyMap[p.id] ? 'opacity-40 cursor-not-allowed' : 'text-green-600 cursor-pointer']" />
+                                            <span :class="['text-sm whitespace-nowrap', p.paymentSlipUrl ? 'text-gray-700' : 'text-gray-400']">สลีปถูกต้อง</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <!-- Inline reject reason form -->
+                                <div v-if="pendingRejectPassengerId === p.id"
+                                    class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg space-y-2.5">
+                                    <p class="text-xs font-semibold text-red-700 flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                        </svg>
+                                        ระบุเหตุผลที่ปฏิเสธสลีป
+                                    </p>
+                                    <!-- Styled dropdown -->
+                                    <div class="relative">
+                                        <select v-model="rejectReasonInput"
+                                            class="w-full appearance-none text-sm border border-red-300 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400 cursor-pointer pr-8">
+                                            <option v-for="r in REJECT_REASONS" :key="r" :value="r">{{ r }}</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none">
+                                            <svg class="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <!-- Additional note -->
+                                    <textarea v-model="rejectNoteInput" rows="2"
+                                        placeholder="อธิบายเพิ่มเติม เช่น ยอดที่โอนมา ฿450 แต่ต้องชำระ ฿500 (ไม่บังคับ)"
+                                        class="w-full text-sm border border-red-200 rounded-lg px-3 py-2 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none" />
+                                    <div class="flex gap-2 justify-end">
+                                        <button @click="cancelRejectSlip"
+                                            class="px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            ยกเลิก
+                                        </button>
+                                        <button @click="confirmRejectSlip(p.id)"
+                                            class="px-3 py-1.5 text-xs text-white bg-red-500 rounded-lg hover:bg-red-600 font-medium transition-colors">
+                                            ยืนยันการปฏิเสธ
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </template><!-- end interactive mode -->
+                </div>
+                <!-- Footer -->
+                <div class="px-6 py-4 border-t border-gray-200 space-y-3">
+                    <!-- READ-ONLY footer -->
+                    <template v-if="isReadOnlyMode">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2 text-sm text-green-700 font-medium">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                ชำระเงินครบทั้งหมดแล้ว
+                            </div>
+                            <button @click="isPaymentModalVisible = false"
+                                class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                                ปิด
+                            </button>
+                        </div>
+                    </template>
+                    <!-- INTERACTIVE footer -->
+                    <template v-else>
+                        <!-- warning กรณียังมีคนที่ไม่ได้ยืนยัน -->
+                        <div v-if="unverifiedCount > 0"
+                            class="flex items-start gap-2 px-3 py-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md">
+                            <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                            </svg>
+                            <span>ยังมี <strong>{{ unverifiedCount }} คน </strong>ที่ยังไม่ได้ยืนยันการชำระเงิน — กดยืนยันถึงที่หมายได้เลย หรือรอให้ครบก่อน</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="text-xs text-gray-500">
+                                ยืนยันแล้ว {{ verifiedCount }}/{{ paymentModalRoute?.passengers?.length ?? 0 }} คน
+                                <span v-if="Object.values(slipRejectMap).some(Boolean)" class="text-red-500 ml-1">
+                                    · ปฏิเสธสลีป {{ Object.values(slipRejectMap).filter(Boolean).length }} คน
+                                </span>
+                            </p>
+                            <div class="flex gap-3">
+                                <button @click="isPaymentModalVisible = false"
+                                    class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                                    ปิด
+                                </button>
+                                <button @click="completeWithPaymentVerification"
+                                    :class="['px-4 py-2 text-sm text-white rounded-md transition-colors font-medium', allPaymentsVerified ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600']">
+                                    {{ paymentModalRoute?.status === 'completed' ? 'บันทึกการยืนยัน' : 'ยืนยันถึงที่หมาย' }}
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receipt Modal -->
+        <div v-if="isReceiptModalVisible && receiptPassenger" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 px-4"
+            @click.self="isReceiptModalVisible = false">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] flex flex-col">
+                <!-- Receipt header -->
+                <div :class="['px-6 py-5 text-white text-center flex-shrink-0', receiptPassenger.paymentMethod === 'FRIEND_PAID' ? 'bg-blue-600' : 'bg-green-600']">
+                    <svg class="w-10 h-10 mx-auto mb-2 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="text-lg font-bold">ใบสำคัญรับเงิน</h3>
+                    <p class="text-xs opacity-75 mt-0.5">เลขที่อ้างอิง: {{ receiptPassenger.id?.slice(-8).toUpperCase() }}</p>
+                </div>
+
+                <!-- Receipt body -->
+                <div class="px-6 py-4 space-y-0 text-sm overflow-y-auto flex-1">
+                    <!-- กรณีเพื่อนร่วมทางจ่ายให้ -->
+                    <div v-if="receiptPassenger.paymentMethod === 'FRIEND_PAID'"
+                        class="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-2">
+                        <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-xs text-blue-700">เพื่อนร่วมทางชำระค่าโดยสารให้ผู้โดยสารท่านนี้</p>
+                    </div>
+
+                    <!-- Section: ข้อมูลการเดินทาง -->
+                    <div class="space-y-2.5 pb-3 border-b border-dashed border-gray-200">
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">วันที่</span>
+                            <span class="font-medium text-gray-900 text-right">{{ paymentModalRoute?.date }} · {{ paymentModalRoute?.time }}</span>
+                        </div>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">เส้นทาง</span>
+                            <span class="font-medium text-gray-900 text-right max-w-[60%]">{{ paymentModalRoute?.origin }} → {{ paymentModalRoute?.destination }}</span>
+                        </div>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">จุดรับ</span>
+                            <span class="font-medium text-gray-900 text-right max-w-[60%]">{{ receiptPassenger.pickupLocation || '-' }}</span>
+                        </div>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">จุดส่ง</span>
+                            <span class="font-medium text-gray-900 text-right max-w-[60%]">{{ receiptPassenger.dropoffLocation || '-' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Section: ข้อมูลคู่สัญญา -->
+                    <div class="space-y-2.5 py-3 border-b border-dashed border-gray-200">
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">ผู้โดยสาร</span>
+                            <span class="font-medium text-gray-900">{{ receiptPassenger.name }}</span>
+                        </div>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">ผู้ขับ</span>
+                            <span class="font-medium text-gray-900">{{ paymentModalRoute?.driverName }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Section: ค่าโดยสาร -->
+                    <div class="space-y-2.5 py-3 border-b border-dashed border-gray-200">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">จำนวนที่นั่ง</span>
+                            <span class="font-medium text-gray-900">{{ receiptPassenger.seats }} ที่นั่ง</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">ราคาต่อที่นั่ง</span>
+                            <span class="font-medium text-gray-900">฿{{ (paymentModalRoute?.pricePerSeat ?? 0).toLocaleString() }}</span>
+                        </div>
+                        <div class="flex justify-between text-base">
+                            <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
+                            <span :class="['font-bold', receiptPassenger.paymentMethod === 'FRIEND_PAID' ? 'text-blue-700' : 'text-green-700']">
+                                ฿{{ ((paymentModalRoute?.pricePerSeat ?? 0) * receiptPassenger.seats).toLocaleString() }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Section: วิธีชำระเงิน -->
+                    <div class="space-y-2 py-3">
+                        <div class="flex justify-between items-start gap-2">
+                            <span class="text-gray-500 flex-shrink-0">ชำระโดย</span>
+                            <div class="text-right">
+                                <span v-if="receiptPassenger.paymentMethod === 'CASH'"
+                                    class="font-medium text-gray-900">เงินสด</span>
+                                <span v-else-if="receiptPassenger.paymentMethod === 'FRIEND_PAID'"
+                                    class="font-medium text-blue-700">เพื่อนร่วมทางชำระให้</span>
+                                <div v-else class="space-y-0.5">
+                                    <p class="font-medium text-gray-900">โอนผ่านธนาคาร</p>
+                                    <p class="text-xs text-gray-500">{{ receiptPassenger.bankName }}</p>
+                                    <p class="text-xs text-gray-500">ชื่อบัญชี: {{ receiptPassenger.bankAccountName }}</p>
+                                    <p class="text-xs font-mono text-gray-700">เลขบัญชี: {{ receiptPassenger.bankAccount }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between gap-2 text-xs text-gray-400">
+                            <span>ยืนยันเมื่อ</span>
+                            <span>{{ confirmedAtMap[paymentModalRoute?.id]?.[receiptPassenger.id]
+                                ? new Date(confirmedAtMap[paymentModalRoute.id][receiptPassenger.id]).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                : '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Receipt footer -->
+                <div class="px-6 pb-5 flex-shrink-0 flex gap-3">
+                    <button @click="isReceiptModalVisible = false"
+                        class="flex-1 px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                        ปิด
+                    </button>
+                    <button @click="downloadReceipt"
+                        class="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 font-medium">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        ดาวน์โหลด
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slip image fullscreen preview -->
+        <div v-if="slipPreviewUrl" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80"
+            @click="slipPreviewUrl = null">
+            <div class="relative">
+                <img :src="slipPreviewUrl" alt="Slip Preview"
+                    class="max-w-sm max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+                <button @click.stop="slipPreviewUrl = null"
+                    class="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-gray-900">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import html2canvas from 'html2canvas'
 import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -473,7 +911,7 @@ async function fetchMyRoutes() {
     try {
         const routes = await $api('/routes/me')
 
-        const allowedRouteStatuses = new Set(['AVAILABLE', 'FULL', 'IN_TRANSIT'])
+        const allowedRouteStatuses = new Set(['AVAILABLE', 'FULL', 'IN_TRANSIT', 'COMPLETED'])
 
         const formatted = []
         const ownRoutes = []
@@ -576,12 +1014,15 @@ async function fetchMyRoutes() {
                 polyline: r.routePolyline || null,
                 stops,
                 stopsCoords,
+                driverName: `${r.driver?.firstName || ''} ${r.driver?.lastName || ''}`.trim() || 'คนขับ',
+                licensePlate: r.vehicle?.licensePlate || '-',
+                vehicleModel: r.vehicle?.vehicleModel || '-',
                 carDetails: (r.vehicle
                     ? [`${r.vehicle.vehicleModel} (${r.vehicle.vehicleType})`, ...(r.vehicle.amenities || [])]
                     : ['ไม่มีข้อมูลรถ']),
                 photos: r.vehicle?.photos || [],
                 conditions: r.conditions || '',
-                passengers: confirmedBookings.map(b => ({
+                passengers: confirmedBookings.map((b, idx) => ({
                     id: b.id,
                     seats: b.numberOfSeats || 0,
                     status: 'confirmed',
@@ -591,6 +1032,15 @@ async function fetchMyRoutes() {
                     isVerified: !!b.passenger?.isVerified,
                     rating: 4.5,
                     reviews: Math.floor(Math.random() * 50) + 5,
+                    pickupLocation: b.pickupLocation?.name || b.pickupLocation?.address || '-',
+                    dropoffLocation: b.dropoffLocation?.name || b.dropoffLocation?.address || '-',
+                    // --- MOCK payment data (replace with real fields when backend is ready) ---
+                    paymentMethod: idx % 3 === 2 ? 'FRIEND_PAID' : idx % 2 === 0 ? 'CASH' : 'SLIP',
+                    paymentStatus: 'SUBMITTED',
+                    paymentSlipUrl: idx % 3 !== 2 && idx % 2 !== 0 ? 'https://placehold.co/400x600/22c55e/ffffff?text=สลีปโอนเงิน' : null,
+                    bankName: idx % 2 !== 0 ? 'ธนาคารกสิกรไทย (KBank)' : null,
+                    bankAccount: idx % 2 !== 0 ? '123-4-56789-0' : null,
+                    bankAccountName: idx % 2 !== 0 ? 'สมชาย ใจดี' : null,
                 })),
                 durationText: (typeof r.duration === 'string' ? formatDuration(r.duration) : r.duration) || (r.durationSeconds ? `${Math.round(r.durationSeconds / 60)} นาที` : '-'),
                 distanceText: (typeof r.distance === 'string' ? formatDistance(r.distance) : r.distance) || (r.distanceMeters ? `${(r.distanceMeters / 1000).toFixed(1)} กม.` : '-'),
@@ -756,6 +1206,201 @@ const isModalVisible = ref(false)
 const tripToAction = ref(null)
 const modalContent = ref({ title: '', message: '', confirmText: '', action: null, variant: 'danger' })
 
+// --- Payment verification modal state ---
+const isPaymentModalVisible = ref(false)
+const paymentModalRoute = ref(null)
+const paymentVerifyMap = ref({})
+const lockedVerifyMap = ref({}) // { [passengerId]: boolean } — ล็อกหลังจากยืนยันแล้ว ห้าม uncheck
+const slipPreviewUrl = ref(null)
+const verifyHistory = ref({}) // { [routeId]: { [passengerId]: boolean } } — state ล่าสุดใน session
+const confirmedVerifyHistory = ref({}) // { [routeId]: { [passengerId]: boolean } } — บันทึกหลัง "ยืนยันถึงที่หมาย"
+const confirmedAtMap = ref({}) // { [routeId]: { [passengerId]: string } } — เวลาที่ยืนยัน
+const slipRejectMap = ref({}) // { [passengerId]: boolean }
+const slipRejectReasonMap = ref({}) // { [passengerId]: string } — เหตุผลที่ปฏิเสธ
+const rejectHistory = ref({}) // { [routeId]: { [passengerId]: boolean } }
+const rejectReasonHistory = ref({}) // { [routeId]: { [passengerId]: string } }
+const pendingRejectPassengerId = ref(null) // รอกรอกเหตุผลก่อน confirm reject
+const rejectReasonInput = ref('')
+const rejectNoteInput = ref('')
+const isReceiptModalVisible = ref(false)
+const receiptPassenger = ref(null)
+
+const REJECT_REASONS = [
+    'ยอดเงินไม่ถูกต้อง',
+    'ชื่อผู้รับเงินไม่ตรง',
+    'สลีปเก่า/ใช้ซ้ำ',
+    'รูปภาพไม่ชัดเจน',
+    'สงสัยสลีปปลอม',
+    'อื่นๆ',
+]
+
+// ใช้ method แทน inline mutation เพื่อให้ Vue detect การเปลี่ยนแปลงได้ทั้ง check และ uncheck
+const setVerify = (passengerId, checked) => {
+    paymentVerifyMap.value = { ...paymentVerifyMap.value, [passengerId]: checked }
+    if (paymentModalRoute.value?.id) {
+        verifyHistory.value[paymentModalRoute.value.id] = { ...paymentVerifyMap.value }
+    }
+    // ไม่ lock ทันที — lock จะเกิดขึ้นเมื่อกด "ยืนยันถึงที่หมาย" และเปิด modal ครั้งต่อไป
+}
+
+const startRejectSlip = (passengerId) => {
+    pendingRejectPassengerId.value = passengerId
+    rejectReasonInput.value = REJECT_REASONS[0]
+    rejectNoteInput.value = ''
+}
+
+const cancelRejectSlip = () => {
+    pendingRejectPassengerId.value = null
+    rejectReasonInput.value = ''
+    rejectNoteInput.value = ''
+}
+
+const confirmRejectSlip = (passengerId) => {
+    const base = rejectReasonInput.value.trim() || REJECT_REASONS[0]
+    const note = rejectNoteInput.value.trim()
+    const reason = note ? `${base} — ${note}` : base
+    slipRejectMap.value = { ...slipRejectMap.value, [passengerId]: true }
+    slipRejectReasonMap.value = { ...slipRejectReasonMap.value, [passengerId]: reason }
+    lockedVerifyMap.value = { ...lockedVerifyMap.value, [passengerId]: true }
+    if (paymentModalRoute.value?.id) {
+        const routeId = paymentModalRoute.value.id
+        rejectHistory.value[routeId] = { ...(rejectHistory.value[routeId] || {}), [passengerId]: true }
+        rejectReasonHistory.value[routeId] = { ...(rejectReasonHistory.value[routeId] || {}), [passengerId]: reason }
+    }
+    pendingRejectPassengerId.value = null
+    rejectReasonInput.value = ''
+    rejectNoteInput.value = ''
+    toast.warning('แจ้งผู้โดยสาร', 'แจ้งผู้โดยสารว่าสลีปไม่ถูกต้องแล้ว')
+}
+
+const showReceipt = (passenger) => {
+    receiptPassenger.value = passenger
+    isReceiptModalVisible.value = true
+}
+
+const downloadReceipt = async () => {
+    if (!receiptPassenger.value || !paymentModalRoute.value) return
+    const p = receiptPassenger.value
+    const route = paymentModalRoute.value
+    const refNo = p.id?.slice(-8).toUpperCase()
+    const total = ((route.pricePerSeat ?? 0) * p.seats).toLocaleString()
+    const confirmedAt = confirmedAtMap.value[route.id]?.[p.id]
+        ? new Date(confirmedAtMap.value[route.id][p.id]).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '-'
+
+    // สร้าง HTML ของใบเสร็จด้วย inline styles ทั้งหมด (html2canvas ต้องการ inline styles)
+    const s = {
+        wrap: 'font-family:sans-serif;font-size:14px;color:#111;background:#fff;width:400px;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12)',
+        hd: `background:${p.paymentMethod === 'FRIEND_PAID' ? '#2563eb' : '#16a34a'};color:#fff;text-align:center;padding:22px 20px`,
+        hdH: 'font-size:18px;font-weight:700;margin:0 0 4px',
+        hdP: 'font-size:11px;opacity:.75;margin:0',
+        bd: 'padding:16px 18px',
+        note: 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#1d4ed8',
+        sec: 'border-bottom:1px dashed #d1d5db;padding-bottom:12px;margin-bottom:12px',
+        secLast: 'padding-bottom:0',
+        row: 'display:flex;justify-content:space-between;gap:12px;margin-bottom:7px',
+        rowLast: 'display:flex;justify-content:space-between;gap:12px;margin-bottom:0',
+        lbl: 'color:#6b7280;flex-shrink:0',
+        val: 'font-weight:500;text-align:right',
+        totalLbl: 'font-weight:600;color:#111;flex-shrink:0',
+        totalVal: `font-size:15px;font-weight:700;color:${p.paymentMethod === 'FRIEND_PAID' ? '#1d4ed8' : '#16a34a'};text-align:right`,
+    }
+
+    let paymentLines = ''
+    if (p.paymentMethod === 'CASH') {
+        paymentLines = `<div style="${s.rowLast}"><span style="${s.lbl}">ชำระโดย</span><span style="${s.val}">เงินสด</span></div>`
+    } else if (p.paymentMethod === 'FRIEND_PAID') {
+        paymentLines = `<div style="${s.rowLast}"><span style="${s.lbl}">ชำระโดย</span><span style="${s.val};color:#2563eb">เพื่อนร่วมทางชำระให้</span></div>`
+    } else {
+        paymentLines = `
+        <div style="${s.row}"><span style="${s.lbl}">ชำระโดย</span><span style="${s.val}">โอนผ่านธนาคาร</span></div>
+        <div style="${s.row}"><span style="${s.lbl}">ธนาคาร</span><span style="${s.val}">${p.bankName || '-'}</span></div>
+        <div style="${s.row}"><span style="${s.lbl}">ชื่อบัญชี</span><span style="${s.val}">${p.bankAccountName || '-'}</span></div>
+        <div style="${s.rowLast}"><span style="${s.lbl}">เลขบัญชี</span><span style="${s.val};font-family:monospace">${p.bankAccount || '-'}</span></div>`
+    }
+
+    const noteHtml = p.paymentMethod === 'FRIEND_PAID'
+        ? `<div style="${s.note}">เพื่อนร่วมทางชำระค่าโดยสารให้ผู้โดยสารท่านนี้</div>`
+        : ''
+
+    const el = document.createElement('div')
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px'
+    el.innerHTML = `
+    <div style="${s.wrap}">
+      <div style="${s.hd}">
+        <p style="${s.hdH}">ใบสำคัญรับเงิน</p>
+        <p style="${s.hdP}">เลขที่อ้างอิง: ${refNo}</p>
+      </div>
+      <div style="${s.bd}">
+        ${noteHtml}
+        <div style="${s.sec}">
+          <div style="${s.row}"><span style="${s.lbl}">วันที่</span><span style="${s.val}">${route.date} · ${route.time}</span></div>
+          <div style="${s.row}"><span style="${s.lbl}">เส้นทาง</span><span style="${s.val}">${route.origin} → ${route.destination}</span></div>
+          <div style="${s.row}"><span style="${s.lbl}">จุดรับ</span><span style="${s.val}">${p.pickupLocation || '-'}</span></div>
+          <div style="${s.rowLast}"><span style="${s.lbl}">จุดส่ง</span><span style="${s.val}">${p.dropoffLocation || '-'}</span></div>
+        </div>
+        <div style="${s.sec}">
+          <div style="${s.row}"><span style="${s.lbl}">ผู้โดยสาร</span><span style="${s.val}">${p.name}</span></div>
+          <div style="${s.rowLast}"><span style="${s.lbl}">ผู้ขับ</span><span style="${s.val}">${route.driverName}</span></div>
+        </div>
+        <div style="${s.sec}">
+          <div style="${s.row}"><span style="${s.lbl}">จำนวนที่นั่ง</span><span style="${s.val}">${p.seats} ที่นั่ง</span></div>
+          <div style="${s.row}"><span style="${s.lbl}">ราคาต่อที่นั่ง</span><span style="${s.val}">฿${(route.pricePerSeat ?? 0).toLocaleString()}</span></div>
+          <div style="${s.rowLast}"><span style="${s.totalLbl}">รวมทั้งสิ้น</span><span style="${s.totalVal}">฿${total}</span></div>
+        </div>
+        <div style="${s.secLast}">
+          ${paymentLines}
+          <div style="${s.row};margin-top:7px"><span style="${s.lbl}">ยืนยันเมื่อ</span><span style="${s.val}">${confirmedAt}</span></div>
+        </div>
+      </div>
+    </div>`
+
+    document.body.appendChild(el)
+    try {
+        const canvas = await html2canvas(/** @type {HTMLElement} */ (el.firstElementChild), {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+        })
+        const link = document.createElement('a')
+        link.download = `ใบเสร็จ-${refNo}.png`
+        link.href = canvas.toDataURL('image/png')
+        link.click()
+    } finally {
+        document.body.removeChild(el)
+    }
+}
+
+
+const allPaymentsVerified = computed(() => {
+    const passengers = paymentModalRoute.value?.passengers
+    if (!passengers?.length) return true
+    return passengers.every(p => paymentVerifyMap.value[p.id] || slipRejectMap.value[p.id])
+})
+
+// read-only mode: route เสร็จแล้ว + ทุกคนผ่านการกด "ยืนยันถึงที่หมาย" แล้ว (ไม่มีปฏิเสธค้างอยู่)
+// ใช้ confirmedVerifyHistory แทน paymentVerifyMap เพื่อไม่ให้การ check checkbox เปลี่ยน mode ทันที
+const isReadOnlyMode = computed(() => {
+    if (paymentModalRoute.value?.status !== 'completed') return false
+    const passengers = paymentModalRoute.value?.passengers
+    if (!passengers?.length) return true
+    const routeId = paymentModalRoute.value.id
+    const confirmed = confirmedVerifyHistory.value[routeId] || {}
+    const rejected = rejectHistory.value[routeId] || {}
+    return passengers.every(p => confirmed[p.id] === true && !rejected[p.id])
+})
+
+const unverifiedCount = computed(() => {
+    const passengers = paymentModalRoute.value?.passengers
+    if (!passengers?.length) return 0
+    return passengers.filter(p => !paymentVerifyMap.value[p.id] && !slipRejectMap.value[p.id]).length
+})
+
+const verifiedCount = computed(() => {
+    return Object.values(paymentVerifyMap.value).filter(Boolean).length
+})
+
+
 const openConfirmModal = (trip, action) => {
     tripToAction.value = trip
     if (action === 'confirm') {
@@ -782,6 +1427,39 @@ const openConfirmModal = (trip, action) => {
             action: 'delete',
             variant: 'danger',
         }
+    } else if (action === 'arrive') {
+        modalContent.value = {
+            title: 'ยืนยันการถึงที่หมาย',
+            message: `ยืนยันว่าเส้นทาง "${trip.origin} → ${trip.destination}" ถึงที่หมายแล้วใช่หรือไม่?\n\nผู้โดยสารจะได้รับแจ้งให้ชำระค่าโดยสาร`,
+            confirmText: 'ใช่ ถึงที่หมายแล้ว',
+            action: 'arrive',
+            variant: 'primary',
+        }
+    } else if (action === 'complete-route') {
+        const saved = verifyHistory.value[trip.id] || {}
+        const confirmed = confirmedVerifyHistory.value[trip.id] || {}
+        const savedReject = rejectHistory.value[trip.id] || {}
+        const savedRejectReason = rejectReasonHistory.value[trip.id] || {}
+        const verifyMap = {}
+        const rejectMap = {}
+        const rejectReasonMap = {}
+        const lockedMap = {}
+        ;(trip.passengers || []).forEach(p => {
+            // แสดง state ล่าสุด (จาก session ก่อน) หรือจาก confirmedHistory
+            verifyMap[p.id] = saved[p.id] || confirmed[p.id] || false
+            rejectMap[p.id] = savedReject[p.id] || false
+            rejectReasonMap[p.id] = savedRejectReason[p.id] || ''
+            // lock เฉพาะถ้าเคยกด "ยืนยันถึงที่หมาย" แล้ว (มีใน confirmedVerifyHistory)
+            lockedMap[p.id] = confirmed[p.id] === true || savedReject[p.id] === true
+        })
+        paymentVerifyMap.value = verifyMap
+        slipRejectMap.value = rejectMap
+        slipRejectReasonMap.value = rejectReasonMap
+        lockedVerifyMap.value = lockedMap
+        pendingRejectPassengerId.value = null
+        paymentModalRoute.value = trip
+        isPaymentModalVisible.value = true
+        return
     }
     isModalVisible.value = true
 }
@@ -805,6 +1483,13 @@ const handleConfirmAction = async () => {
         } else if (action === 'delete') {
             await $api(`/bookings/${bookingId}`, { method: 'DELETE' })
             toast.success('ลบรายการสำเร็จ', 'ลบคำขอออกจากรายการแล้ว')
+        } else if (action === 'arrive') {
+            // Mock: อัปเดต local state ไม่ต้องเรียก API
+            const idx = myRoutes.value.findIndex(r => r.id === bookingId)
+            if (idx !== -1) myRoutes.value[idx].status = 'arrived'
+            toast.success('บันทึกสำเร็จ', 'ผู้โดยสารจะได้รับแจ้งให้ชำระค่าโดยสาร')
+            closeConfirmModal()
+            return
         }
         closeConfirmModal()
         await fetchMyRoutes()
@@ -813,6 +1498,37 @@ const handleConfirmAction = async () => {
         toast.error('เกิดข้อผิดพลาด', error?.data?.message || 'ไม่สามารถดำเนินการได้')
         closeConfirmModal()
     }
+}
+
+const completeWithPaymentVerification = () => {
+    if (!paymentModalRoute.value) return
+    const routeId = paymentModalRoute.value.id
+    const passengers = paymentModalRoute.value.passengers || []
+    // หาผู้โดยสารที่เพิ่งได้รับการยืนยันใหม่ (ยังไม่เคยอยู่ใน confirmedVerifyHistory)
+    const prevConfirmed = confirmedVerifyHistory.value[routeId] || {}
+    const newlyVerified = passengers.filter(
+        p => paymentVerifyMap.value[p.id] && !prevConfirmed[p.id] && !slipRejectMap.value[p.id]
+    )
+    // บันทึก state ที่ confirmed ณ ตอนนี้ → ใช้เป็น lock เมื่อเปิด modal ครั้งต่อไป
+    confirmedVerifyHistory.value[routeId] = { ...paymentVerifyMap.value }
+    // บันทึกเวลายืนยันสำหรับผู้โดยสารที่เพิ่งได้รับการยืนยันใหม่
+    const nowIso = new Date().toISOString()
+    const prevAtMap = confirmedAtMap.value[routeId] || {}
+    confirmedAtMap.value[routeId] = {
+        ...prevAtMap,
+        ...Object.fromEntries(newlyVerified.map(p => [p.id, nowIso]))
+    }
+    // Mock: อัปเดต local state ไม่ต้องเรียก API
+    const idx = myRoutes.value.findIndex(r => r.id === routeId)
+    if (idx !== -1) myRoutes.value[idx].status = 'completed'
+    // Auto-send receipt ให้ผู้โดยสารที่เพิ่งยืนยัน
+    if (newlyVerified.length > 0) {
+        toast.success('ส่งใบเสร็จแล้ว', `ส่งใบสำคัญรับเงินให้ผู้โดยสาร ${newlyVerified.length} คน เรียบร้อยแล้ว`)
+    } else {
+        toast.success('บันทึกสำเร็จ', 'บันทึกการยืนยันเรียบร้อยแล้ว')
+    }
+    isPaymentModalVisible.value = false
+    paymentModalRoute.value = null
 }
 
 const copyEmail = async (email) => {
@@ -866,7 +1582,7 @@ function formatDuration(input) {
 // --- Lifecycle ---
 useHead({
     title: 'คำขอจองเส้นทางของฉัน - ไปนำแหน่',
-    script: process.client && !window.google?.maps ? [{
+    script: import.meta.client && !window.google?.maps ? [{
         key: 'gmaps',
         src: `https://maps.googleapis.com/maps/api/js?key=${useRuntimeConfig().public.googleMapsApiKey}&libraries=places,geometry&callback=${GMAPS_CB}`,
         async: true,
@@ -990,6 +1706,22 @@ watch(activeTab, () => {
 .status-cancelled {
     background-color: #f3f4f6;
     color: #6b7280;
+}
+
+.status-in-transit {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-arrived {
+    background-color: #fef9c3;
+    color: #a16207;
+    border: 1px solid #fde047;
+}
+
+.status-completed {
+    background-color: #dcfce7;
+    color: #15803d;
 }
 
 @keyframes slide-in-from-top {

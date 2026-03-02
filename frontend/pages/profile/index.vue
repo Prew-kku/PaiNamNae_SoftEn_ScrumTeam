@@ -205,6 +205,7 @@ const form = reactive({
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
+
 });
 
 let originalUserData = null;
