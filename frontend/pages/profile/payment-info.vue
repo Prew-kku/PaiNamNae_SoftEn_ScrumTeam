@@ -353,20 +353,20 @@ const handleClickOutside = (e) => {
 
 const fetchPaymentInfo = async () => {
     // TODO: replace with real API call
-    // try {
-    //     const data = await $api('/users/me/payment-info')
-    //     promptPayId.value = data.promptPayId ?? ''
-    //     bankAccounts.value = data.bankAccounts ?? []
-    // } catch {
-    //     toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลการรับเงินได้')
-    // }
+     try {
+         const data = await $api('/users/me/payment-info')
+         promptPayId.value = data.promptPayId ?? ''
+         bankAccounts.value = data.bankAccounts ?? []
+     } catch {
+         toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลการรับเงินได้')
+     }
 
     // TEST DATA
-    promptPayId.value = '0812345678'
-    bankAccounts.value = [
-        { id: '1', bankCode: 'KBANK', accountNumber: '012-3-45678-9', accountName: 'สมชาย ใจดี' },
-        { id: '2', bankCode: 'SCB', accountNumber: '123-456789-0', accountName: 'สมชาย ใจดี' },
-    ]
+    //promptPayId.value = '0812345678'
+    //bankAccounts.value = [
+    //    { id: '1', bankCode: 'KBANK', accountNumber: '012-3-45678-9', accountName: 'สมชาย ใจดี' },
+    //    { id: '2', bankCode: 'SCB', accountNumber: '123-456789-0', accountName: 'สมชาย ใจดี' },
+    //]
 }
 
 const savePromptPay = async () => {
