@@ -42,11 +42,10 @@
                             ข้อมูลรถยนต์ของฉัน
                         </NuxtLink>
                     </li>
-                    <!-- pichamon395-4 -->
                     <li>
                         <NuxtLink to="/profile/payment-info" class="block px-4 py-2 text-sm rounded-md"
-                            :class="isActive('/profile/my-vehicle') ? 'font-semibold text-blue-600 bg-blue-100' : 'text-gray-700 hover:bg-gray-100'">
-                                    ข้อมูลการรับเงิน
+                            :class="isActive('/profile/payment-info') ? 'font-semibold text-blue-600 bg-blue-100' : 'text-gray-700 hover:bg-gray-100'">
+                            ข้อมูลการรับเงิน
                         </NuxtLink>
                     </li>
                 </ul>
