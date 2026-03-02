@@ -619,7 +619,7 @@ const rejectDeletion = async (requestId, adminReason) => {
             </div>
         `;
 
-        await emailService.sendEmail(request.user.email, subject, html);
+        await emailService.sendEmail(request.user?.email, subject, html);
     }
 
     return { message: "Deletion request rejected and retained for audit. Account reactivated." };
