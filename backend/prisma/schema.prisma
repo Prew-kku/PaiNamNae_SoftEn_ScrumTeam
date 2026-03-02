@@ -85,6 +85,8 @@ model User {
   passengerSuspendedUntil DateTime?
   driverSuspendedUntil    DateTime?
   driverVerification    DriverVerification?
+  promptPayId   String?       // เก็บเบอร์ PromptPay (ตั้งชื่อให้ตรงกับหน้าบ้าน)
+  bankAccounts  BankAccount[] // เชื่อมความสัมพันธ์ว่า 1 User มีได้หลายบัญชีธนาคาร
   vehicles              Vehicle[]
   notification          Notification[]
   createdRoutes         Route[]             @relation("DriverRoutes")
@@ -264,4 +266,18 @@ model DeletionAudit {
   @@index([requestId])
   @@index([status])
   @@index([eventTime])
+}
+
+model BankAccount {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankCode       String   // เช่น 'KBANK', 'SCB', 'OTHER'
+  customBankName String?  // ชื่อธนาคารกรณีเลือก OTHER
+  accountNumber  String   // เลขบัญชี
+  accountName    String   // ชื่อบัญชี
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
 }
