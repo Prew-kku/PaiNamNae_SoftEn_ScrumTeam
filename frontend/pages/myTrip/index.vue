@@ -49,6 +49,15 @@
                                             <span v-else-if="trip.status === 'cancelled'"
                                                 class="status-badge status-cancelled">ยกเลิก</span>
                                         </div>
+                                        <!-- แสดงสถานะการชำระเงิน (Thongchai595-6) -->
+                                        <div v-if="trip.status === 'confirmed'" class="flex justify-end mt-1 -mb-1">
+                                            <span v-if="trip.paymentStatus === 'PAID'"
+                                                class="status-badge status-paid">ชำระเงินแล้ว ✓</span>
+                                            <span v-else-if="trip.paymentStatus === 'SUBMITTED'"
+                                                class="status-badge status-pending-payment">รอยืนยันสลิป</span>
+                                            <span v-else
+                                                class="status-badge status-unpaid">ยังไม่ชำระเงิน</span>
+                                        </div>
                                         <p class="mt-1 text-sm text-gray-600">จุดนัดพบ: {{ trip.pickupPoint }}</p>
                                         <p class="text-sm text-gray-600">
                                             วันที่: {{ trip.date }}
@@ -154,6 +163,18 @@
                                             class="px-4 py-2 text-sm text-red-600 transition duration-200 border border-red-300 rounded-md hover:bg-red-50">
                                             ยกเลิกการจอง
                                         </button>
+                                        <!-- ปุ่มแนบสลิป / สถานะการชำระเงิน (Thongchai595-6) -->
+                                        <button
+                                            v-if="trip.paymentStatus !== 'PAID'"
+                                            @click.stop="trip.paymentStatus !== 'SUBMITTED' && openPaymentModal(trip)"
+                                            :disabled="trip.paymentStatus === 'SUBMITTED'"
+                                            class="px-4 py-2 text-sm font-medium transition duration-200 border rounded-md"
+                                            :class="trip.paymentStatus === 'SUBMITTED'
+                                                ? 'text-amber-600 border-amber-300 bg-amber-50 cursor-default opacity-80'
+                                                : 'text-green-700 border-green-300 hover:bg-green-50'"
+                                        >
+                                            {{ trip.paymentStatus === 'SUBMITTED' ? 'รอยืนยันสลิป' : 'แนบสลิปการโอนเงิน' }}
+                                        </button>
                                         <button
                                             class="px-4 py-2 text-sm text-white transition duration-200 bg-blue-600 rounded-md hover:bg-blue-700">
                                             แชทกับผู้ขับ
@@ -219,6 +240,14 @@
         <ConfirmModal :show="isModalVisible" :title="modalContent.title" :message="modalContent.message"
             :confirmText="modalContent.confirmText" :variant="modalContent.variant" @confirm="handleConfirmAction"
             @cancel="closeConfirmModal" />
+
+        <!-- Modal แนบสลิปการโอนเงิน (Thongchai595-6) -->
+        <PaymentSlipModal
+            :show="showPaymentModal"
+            :booking="selectedPaymentTrip"
+            @close="closePaymentModal"
+            @submitted="onPaymentSubmitted"
+        />
     </div>
 </template>
 
@@ -228,6 +257,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import ConfirmModal from '~/components/ConfirmModal.vue'
+import PaymentSlipModal from '~/components/PaymentSlipModal.vue' // Thongchai595-6
 import { useToast } from '~/composables/useToast'
 
 // Setup dayjs for Thai locale
@@ -285,6 +315,10 @@ const isSubmittingCancel = ref(false)
 const selectedCancelReason = ref('')
 const cancelReasonError = ref('')
 const tripToCancel = ref(null)
+
+// ── Payment Slip Modal state (Thongchai595-6) ────────────────────────────────────
+const showPaymentModal    = ref(false)
+const selectedPaymentTrip = ref(null)
 
 // --- Computed Properties ---
 const filteredTrips = computed(() => {
@@ -390,7 +424,17 @@ async function fetchMyTrips() {
                     (typeof b.route.durationSeconds === 'number' ? `${Math.round(b.route.durationSeconds / 60)} นาที` : '-'),
                 distanceText:
                     (typeof b.route.distance === 'string' ? formatDistance(b.route.distance) : b.route.distance) ||
-                    (typeof b.route.distanceMeters === 'number' ? `${(b.route.distanceMeters / 1000).toFixed(1)} กม.` : '-')
+                    (typeof b.route.distanceMeters === 'number' ? `${(b.route.distanceMeters / 1000).toFixed(1)} กม.` : '-'),
+                // ── การชำระเงิน (Thongchai595-6) ────────────────────────────────────────────────
+                // paymentStatus: 'PENDING_PAYMENT' | 'SUBMITTED' | 'PAID' | null
+                // backend ต้องส่ง b.paymentStatus, b.paymentSlipUrl,
+                // และ b.route.driver.promptPayId / b.route.driver.bankAccounts
+                paymentStatus:  b.paymentStatus  || null,
+                paymentSlipUrl: b.paymentSlipUrl || null,
+                driverPayment: {
+                    promptPayId:  b.route.driver.promptPayId  || null,
+                    bankAccounts: b.route.driver.bankAccounts || [],
+                },
             }
         })
 
@@ -674,6 +718,23 @@ async function submitCancel() {
     }
 }
 
+// ── Payment Slip Modal functions (Thongchai595-6) ────────────────────────────────
+function openPaymentModal(trip) {
+    selectedPaymentTrip.value = trip
+    showPaymentModal.value = true
+}
+
+function closePaymentModal() {
+    showPaymentModal.value = false
+    selectedPaymentTrip.value = null
+}
+
+/** Refresh trip list ให้แสดง paymentStatus ใหม่หลังส่งสลิปสำเร็จ */
+async function onPaymentSubmitted() {
+    closePaymentModal()
+    await fetchMyTrips()
+}
+
 function formatDistance(input) {
     if (typeof input !== 'string') return input
     const parts = input.split('+')
@@ -833,6 +894,22 @@ function initializeMap() {
 .status-cancelled {
     background-color: #f3f4f6;
     color: #6b7280;
+}
+
+/* ── payment status badge styles (Thongchai595-6) ── */
+.status-paid {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+.status-pending-payment {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+.status-unpaid {
+    background-color: #fee2e2;
+    color: #dc2626;
 }
 
 @keyframes slide-in-from-top {
