@@ -133,7 +133,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-700">{{ r.user.email }}</td>
+                                    <td class="px-4 py-3 text-gray-700">{{ r.user?.email }}</td>
                                     <td class="px-4 py-3 text-gray-700">{{ r.user.username }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-700">
                                         {{ r.user.role }}
@@ -432,8 +432,8 @@ function statusLabel(status) {
 
 function getUserDisplayName(user) {
     if (!user) return '-'
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
-    return fullName || user.username || user.email || user.id || '-'
+    const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
+    return fullName || user.username || user?.email || user.id || '-'
 }
 
 function formatDate(iso) {
@@ -473,25 +473,21 @@ async function confirmModal() {
     if (!modal.request) return
     const r = modal.request
     const token = useCookie('token').value || (process.client ? localStorage.getItem('token') : '')
-    
+
     try {
         if (modal.action === 'approve') {
-            // Approve: Soft delete 90 days
-            // PATCH /api/deletion/admin/requests/:id/approve
-             await $fetch(`/deletion/admin/requests/${r.id}/approve`, {
+            await $fetch(`/deletion/admin/requests/${r.id}/approve`, {
                 baseURL: config.public.apiBase,
                 method: 'PATCH',
                 headers: { Authorization: `Bearer ${token}` }
             })
             toast.success('อนุมัติคำร้องแล้ว', 'ระบบจะทำการลบบัญชีในอีก 90 วัน')
-            
         } else {
-            // Reject: Require reason
             if (!modal.adminNote.trim()) {
                 toast.error('กรุณาระบุเหตุผล', 'การปฏิเสธต้องระบุเหตุผลเสมอ')
                 return
             }
-             await $fetch(`/deletion/admin/requests/${r.id}/reject`, {
+            await $fetch(`/deletion/admin/requests/${r.id}/reject`, {
                 baseURL: config.public.apiBase,
                 method: 'PATCH',
                 headers: { Authorization: `Bearer ${token}` },
@@ -499,14 +495,13 @@ async function confirmModal() {
             })
             toast.success('ปฏิเสธคำร้องแล้ว', 'ระบบได้แจ้งเตือนผู้ใช้เรียบร้อยแล้ว')
         }
-        
-        // Refresh list
+
+        closeModal()
         fetchRequests(pagination.page)
-        
+
     } catch (err) {
         console.error(err)
         toast.error('เกิดข้อผิดพลาด', err?.data?.message || 'ทำรายการไม่สำเร็จ')
-    } finally {
         closeModal()
     }
 }

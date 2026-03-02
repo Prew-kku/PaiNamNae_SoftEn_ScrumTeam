@@ -51,14 +51,14 @@
                                                         @click="selectUser(user)"
                                                         class="px-3 py-2 cursor-pointer hover:bg-blue-50"
                                                     >
-                                                        {{ user.firstName }} {{ user.lastName }} ({{ user.email }})
+                                                        {{ user?.firstName }} {{ user?.lastName }} ({{ user?.email }})
                                                     </li>
                                                 </ul>
                                             </div>
                                         </div>
                                         <div v-if="selectedUser" class="mt-2 text-sm text-green-700">
                                             <i class="fa-solid fa-check-circle"></i>
-                                            เลือกแล้ว: {{ selectedUser.firstName }} {{ selectedUser.lastName }}
+                                            เลือกแล้ว: {{ selecteduser?.firstName }} {{ selecteduser?.lastName }}
                                         </div>
                                     </div>
 
@@ -382,7 +382,7 @@ const debouncedSearchUsers = debounce(searchUsers, 300)
 function selectUser(user) {
     selectedUser.value = user
     form.userId = user.id
-    userSearchQuery.value = `${user.firstName} ${user.lastName}`
+    userSearchQuery.value = `${user?.firstName} ${user?.lastName}`
     userSearchResults.value = []
 }
 

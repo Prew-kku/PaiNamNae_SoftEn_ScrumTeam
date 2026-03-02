@@ -119,7 +119,7 @@
 
                 <!-- Profile Dropdown -->
                 <div class="relative flex items-center gap-3">
-                    <span class="hidden text-sm text-gray-700 md:block">{{ user.firstName }}</span>
+                    <span class="hidden text-sm text-gray-700 md:block">{{ user?.firstName }}</span>
                     
                     <!-- Profile Button -->
                     <button 

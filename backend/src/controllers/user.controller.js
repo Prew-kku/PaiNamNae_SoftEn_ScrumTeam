@@ -143,8 +143,8 @@ const adminDeleteUser = asyncHandler(async (req, res) => {
     const deletedUser = await userService.deleteUser(req.params.id);
 
     // ส่งอีเมลแจ้งเตือนการลบบัญชี
-    if (deletedUser && deletedUser.email) {
-        await emailService.sendAccountDeletionEmail(deletedUser.email, deletedUser.username);
+    if (deletedUser && deleteduser?.email) {
+        await emailService.sendAccountDeletionEmail(deleteduser?.email, deletedUser.username);
     }
 
     res.status(200).json({

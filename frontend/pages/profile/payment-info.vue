@@ -1,7 +1,8 @@
 <template>
-    <div>
-        <div class="flex items-center justify-center min-h-screen py-8">
-            <div class="flex w-full max-w-6xl mx-4 overflow-hidden bg-white border border-gray-300 rounded-lg shadow-lg">
+    <div >
+        <div class=" flex items-center justify-center py-8">
+            <div
+                class="flex bg-white rounded-lg shadow-lg overflow-hidden max-w-6xl w-full mx-4 border border-gray-300">
 
                 <ProfileSidebar />
 
@@ -352,20 +353,20 @@ const handleClickOutside = (e) => {
 
 const fetchPaymentInfo = async () => {
     // TODO: replace with real API call
-    // try {
-    //     const data = await $api('/users/me/payment-info')
-    //     promptPayId.value = data.promptPayId ?? ''
-    //     bankAccounts.value = data.bankAccounts ?? []
-    // } catch {
-    //     toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลการรับเงินได้')
-    // }
+     try {
+         const data = await $api('/users/me/payment-info')
+         promptPayId.value = data.promptPayId ?? ''
+         bankAccounts.value = data.bankAccounts ?? []
+     } catch {
+         toast.error('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลการรับเงินได้')
+     }
 
     // TEST DATA
-    promptPayId.value = '0812345678'
-    bankAccounts.value = [
-        { id: '1', bankCode: 'KBANK', accountNumber: '012-3-45678-9', accountName: 'สมชาย ใจดี' },
-        { id: '2', bankCode: 'SCB', accountNumber: '123-456789-0', accountName: 'สมชาย ใจดี' },
-    ]
+    //promptPayId.value = '0812345678'
+    //bankAccounts.value = [
+    //    { id: '1', bankCode: 'KBANK', accountNumber: '012-3-45678-9', accountName: 'สมชาย ใจดี' },
+    //    { id: '2', bankCode: 'SCB', accountNumber: '123-456789-0', accountName: 'สมชาย ใจดี' },
+    //]
 }
 
 const savePromptPay = async () => {

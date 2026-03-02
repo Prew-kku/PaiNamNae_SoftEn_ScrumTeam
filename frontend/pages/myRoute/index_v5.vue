@@ -1,3 +1,4 @@
+<!-- pichamon395-4: ไฟล์นี้ไม่ได้ใช้งาน (เก็บไว้เป็นประวัติการพัฒนาเท่านั้น) -->
 <template>
     <div>
         <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
