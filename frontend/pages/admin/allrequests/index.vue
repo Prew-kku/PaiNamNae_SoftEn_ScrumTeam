@@ -133,7 +133,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-700">{{ r.user.email }}</td>
+                                    <td class="px-4 py-3 text-gray-700">{{ r.user?.email }}</td>
                                     <td class="px-4 py-3 text-gray-700">{{ r.user.username }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-700">
                                         {{ r.user.role }}
@@ -432,8 +432,8 @@ function statusLabel(status) {
 
 function getUserDisplayName(user) {
     if (!user) return '-'
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
-    return fullName || user.username || user.email || user.id || '-'
+    const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
+    return fullName || user.username || user?.email || user.id || '-'
 }
 
 function formatDate(iso) {

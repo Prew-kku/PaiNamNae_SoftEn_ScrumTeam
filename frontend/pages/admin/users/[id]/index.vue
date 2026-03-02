@@ -56,7 +56,7 @@
                                         <label class="block mb-1 text-xs font-medium text-gray-600">อีเมล</label>
                                         <div
                                             class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
-                                            {{ user.email }}
+                                            {{ user?.email }}
                                         </div>
                                     </div>
                                     <div>
@@ -93,14 +93,14 @@
                                         <label class="block mb-1 text-xs font-medium text-gray-600">ชื่อจริง</label>
                                         <div
                                             class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
-                                            {{ user.firstName }}
+                                            {{ user?.firstName }}
                                         </div>
                                     </div>
                                     <div>
                                         <label class="block mb-1 text-xs font-medium text-gray-600">นามสกุล</label>
                                         <div
                                             class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
-                                            {{ user.lastName }}
+                                            {{ user?.lastName }}
                                         </div>
                                     </div>
                                     <div>
