@@ -472,6 +472,8 @@ const approveDeletion = async (requestId) => {
         select: {
             id: true,
             role: true,
+            email: true,
+            username: true,
         },
     });
 
@@ -527,6 +529,24 @@ const approveDeletion = async (requestId) => {
             },
         });
     });
+
+    if (user?.email) {
+        const subject = "แจ้งผลคำขอลบบัญชี: อนุมัติ";
+        const deleteDateStr = scheduledDeleteAt.toLocaleDateString('th-TH');
+        const html = `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #5cb85c;">แจ้งผลคำขอลบบัญชี</h2>
+                <p>สวัสดีคุณ <strong>${user.username || "ผู้ใช้งาน"}</strong>,</p>
+                <p>คำขอลบบัญชีของคุณในระบบ <strong>Pai Nam Nae</strong> ได้รับ <strong>การอนุมัติ</strong> จากผู้ดูแลระบบแล้ว</p>
+                <div style="background: #fdfdfd; padding: 15px; border-left: 4px solid #5cb85c; margin: 20px 0;">
+                    <p style="margin: 0;">เราจะดำเนินการลบและปกปิดข้อมูลของคุณในวันที่ <strong>${deleteDateStr}</strong></p>
+                </div>
+                <hr style="border: none; border-top: 1px solid #eee;">
+                <p style="font-size: 11px; color: #999; text-align: center;">© 2026 Pai Nam Nae Security System. This is an automated notification.</p>
+            </div>
+        `;
+        await emailService.sendEmail(user.email, subject, html);
+    }
 
     return {
         message: "Deletion request approved and scheduled for anonymization.",

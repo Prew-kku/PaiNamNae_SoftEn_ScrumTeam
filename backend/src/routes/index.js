@@ -27,6 +27,14 @@ router.use('/api/maps', mapRoutes);
 // Thongchai595-6
 router.use('/deletion', deletionRoutes);
 router.use('/audit', auditRoutes);
+<<<<<<< Updated upstream
 //jularat378-4
 router.use('/users/me', paymentMethodRoutes);
+=======
+
+// Test routes (For testing cron jobs, isolated from main logic)
+const testRoutes = require('./test.routes');
+router.use('/test', testRoutes);
+
+>>>>>>> Stashed changes
 module.exports = router;
