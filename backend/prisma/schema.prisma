@@ -25,6 +25,7 @@ enum RouteStatus {
   COMPLETED
   CANCELLED
   IN_TRANSIT
+  DRIVER_ARRIVED
 }
 
 enum BookingStatus {
@@ -32,6 +33,20 @@ enum BookingStatus {
   CONFIRMED
   REJECTED
   CANCELLED
+  COMPLETED
+}
+
+enum PaymentMethod {
+  CASH
+  PROMPTPAY
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING     // รอชำระ (trip complete แล้ว)
+  SUBMITTED   // passenger ส่งสลิปแล้ว
+  VERIFIED    // driver ยืนยันรับเงินแล้ว
+  REJECTED    // driver ปฏิเสธสลิป
 }
 
 enum CancelReason {
@@ -214,6 +229,27 @@ model Booking {
   pickupLocation  Json          @db.Json
   dropoffLocation Json          @db.Json
   createdAt       DateTime      @default(now())
+  payment         Payment?
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  bookingId    String        @unique
+  booking      Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount       Float
+  method       PaymentMethod @default(PROMPTPAY)
+  status       PaymentStatus @default(PENDING)
+  slipUrl      String?
+  slipPublicId String?
+  submittedAt  DateTime?
+  verifiedAt   DateTime?
+  rejectedAt   DateTime?
+  rejectReason String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
 }
 
 enum DeletionStatus {

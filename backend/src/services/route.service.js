@@ -277,7 +277,8 @@ const getMyRoutes = async (driverId) => {
               isVerified: true,
               email: true
             }
-          }
+          },
+          payment: { select: { status: true } }
         }
       },
       ...baseInclude
@@ -371,6 +372,97 @@ const cancelRoute = async (routeId, driverId, opts = {}) => {
   return { id: routeId, status: RouteStatus.CANCELLED, cancelledBy: 'DRIVER', cancelledAt: now };
 };
 
+const arriveRoute = async (routeId, driverId) => {
+  const route = await prisma.route.findUnique({
+    where: { id: routeId },
+    include: {
+      bookings: {
+        where: { status: BookingStatus.CONFIRMED },
+        select: { id: true, passengerId: true }
+      }
+    }
+  });
+  if (!route) throw new ApiError(404, 'Route not found');
+  if (route.driverId !== driverId) throw new ApiError(403, 'Forbidden');
+  if (![RouteStatus.AVAILABLE, RouteStatus.FULL].includes(route.status)) {
+    throw new ApiError(400, 'Route must be AVAILABLE or FULL to mark as arrived');
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.route.update({
+      where: { id: routeId },
+      data: { status: RouteStatus.DRIVER_ARRIVED }
+    });
+
+    for (const booking of route.bookings) {
+      await tx.notification.create({
+        data: {
+          userId: booking.passengerId,
+          type: 'BOOKING',
+          title: 'คนขับมาถึงจุดนัดพบแล้ว',
+          body: 'คนขับมาถึงจุดรับผู้โดยสารแล้ว กรุณาเตรียมตัว',
+          metadata: { kind: 'TRIP_ARRIVED', routeId, bookingId: booking.id }
+        }
+      });
+    }
+  });
+
+  return { id: routeId, status: RouteStatus.DRIVER_ARRIVED };
+};
+
+const completeRoute = async (routeId, driverId) => {
+  const route = await prisma.route.findUnique({
+    where: { id: routeId },
+    include: {
+      bookings: {
+        where: { status: BookingStatus.CONFIRMED },
+        include: { passenger: { select: { id: true } } }
+      }
+    }
+  });
+  if (!route) throw new ApiError(404, 'Route not found');
+  if (route.driverId !== driverId) throw new ApiError(403, 'Forbidden');
+  const completableStatuses = [RouteStatus.AVAILABLE, RouteStatus.FULL, RouteStatus.DRIVER_ARRIVED, RouteStatus.IN_TRANSIT];
+  if (!completableStatuses.includes(route.status)) {
+    throw new ApiError(400, 'Route cannot be completed at this stage');
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.route.update({
+      where: { id: routeId },
+      data: { status: RouteStatus.COMPLETED }
+    });
+
+    for (const booking of route.bookings) {
+      await tx.booking.update({
+        where: { id: booking.id },
+        data: { status: BookingStatus.COMPLETED }
+      });
+
+      const amount = route.pricePerSeat * booking.numberOfSeats;
+      await tx.payment.create({
+        data: {
+          bookingId: booking.id,
+          amount,
+          status: 'PENDING'
+        }
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: booking.passengerId,
+          type: 'BOOKING',
+          title: 'เดินทางถึงที่หมายแล้ว',
+          body: `ขอบคุณที่ใช้บริการ กรุณาชำระเงิน ${amount} บาท`,
+          metadata: { kind: 'TRIP_COMPLETED', routeId, bookingId: booking.id, amount }
+        }
+      });
+    }
+  });
+
+  return { id: routeId, status: RouteStatus.COMPLETED };
+};
+
 module.exports = {
   getAllRoutes,
   searchRoutes,
@@ -379,5 +471,7 @@ module.exports = {
   createRoute,
   updateRoute,
   deleteRoute,
-  cancelRoute
+  cancelRoute,
+  arriveRoute,
+  completeRoute
 };

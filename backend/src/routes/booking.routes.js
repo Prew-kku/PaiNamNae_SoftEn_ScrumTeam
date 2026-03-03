@@ -3,6 +3,8 @@ const validate = require('../middlewares/validate');
 const { protect, requireAdmin } = require('../middlewares/auth');
 const requireDriverVerified = require('../middlewares/driverVerified');
 const bookingController = require('../controllers/booking.controller');
+const paymentController = require('../controllers/payment.controller');
+const upload = require('../middlewares/upload.middleware');
 const {
   createBookingSchema,
   idParamSchema,
@@ -111,6 +113,53 @@ router.delete(
   protect,
   validate({ params: idParamSchema }),
   bookingController.deleteBooking
+);
+
+// --- Payment Routes ---
+
+// GET /bookings/:id/payment
+router.get(
+  '/:id/payment',
+  protect,
+  validate({ params: idParamSchema }),
+  paymentController.getPayment
+);
+
+// POST /bookings/:id/payment/slip  (passenger submits slip)
+router.post(
+  '/:id/payment/slip',
+  protect,
+  requirePassengerNotSuspended,
+  validate({ params: idParamSchema }),
+  upload.single('slip'),
+  paymentController.submitPaymentSlip
+);
+
+// PATCH /bookings/:id/payment/cash  (passenger declares cash payment)
+router.patch(
+  '/:id/payment/cash',
+  protect,
+  requirePassengerNotSuspended,
+  validate({ params: idParamSchema }),
+  paymentController.declareCashPayment
+);
+
+// PATCH /bookings/:id/payment/verify  (driver verifies payment)
+router.patch(
+  '/:id/payment/verify',
+  protect,
+  requireDriverVerified,
+  validate({ params: idParamSchema }),
+  paymentController.verifyPayment
+);
+
+// PATCH /bookings/:id/payment/reject  (driver rejects slip)
+router.patch(
+  '/:id/payment/reject',
+  protect,
+  requireDriverVerified,
+  validate({ params: idParamSchema }),
+  paymentController.rejectPayment
 );
 
 module.exports = router;
