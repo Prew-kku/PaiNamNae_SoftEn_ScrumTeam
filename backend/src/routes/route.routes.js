@@ -121,6 +121,24 @@ router.patch(
   routeController.cancelRoute
 );
 
+// PATCH /routes/:id/arrive
+router.patch(
+  "/:id/arrive",
+  protect,
+  requireDriverVerified,
+  validate({ params: idParamSchema }),
+  routeController.arriveRoute
+);
+
+// PATCH /routes/:id/complete
+router.patch(
+  "/:id/complete",
+  protect,
+  requireDriverVerified,
+  validate({ params: idParamSchema }),
+  routeController.completeRoute
+);
+
 // DELETE /routes/:id
 router.delete(
   "/:id",

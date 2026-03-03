@@ -65,10 +65,40 @@
             <div class="text-center mb-4 py-3 bg-blue-50 rounded-xl border border-blue-100">
               <p class="text-sm text-gray-500">ชำระให้ <span class="font-semibold text-gray-800">{{ booking?.driver?.name }}</span></p>
               <p class="text-3xl font-extrabold text-blue-600 mt-1">
-                {{ booking?.price?.toLocaleString('th-TH') }}
+                {{ totalAmount.toLocaleString('th-TH') }}
                 <span class="text-lg font-semibold text-blue-400">บาท</span>
               </p>
-              <p class="text-xs text-gray-400 mt-0.5">{{ booking?.seats }} ที่นั่ง · {{ booking?.origin }} → {{ booking?.destination }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">{{ booking?.seats }} ที่นั่ง {{ booking?.origin }} → {{ booking?.destination }}</p>
+            </div>
+
+            <!-- ── จ่ายแทนผู้ร่วมเดินทาง ── -->
+            <div v-if="fellowPassengers.length > 0" class="mb-4">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">จ่ายแทนผู้ร่วมเดินทาง</p>
+              <div class="space-y-1.5">
+                <label
+                  v-for="f in fellowPassengers"
+                  :key="f.bookingId"
+                  class="flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all"
+                  :class="selectedFriendIds.has(f.bookingId)
+                    ? 'border-blue-400 bg-blue-50'
+                    : 'border-gray-200 bg-gray-50 hover:border-blue-200 hover:bg-blue-50/50'"
+                >
+                  <input
+                    type="checkbox"
+                    class="w-4 h-4 accent-blue-600 rounded shrink-0"
+                    :checked="selectedFriendIds.has(f.bookingId)"
+                    @change="toggleFriend(f.bookingId)"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-800 leading-tight">{{ f.name }}</p>
+                    <p class="text-xs text-gray-500">{{ f.seats }} ที่นั่ง</p>
+                  </div>
+                  <span class="text-sm font-bold text-blue-700 shrink-0">+{{ f.price.toLocaleString('th-TH') }}</span>
+                </label>
+              </div>
+              <p v-if="selectedFriendIds.size > 0" class="text-xs text-blue-600 mt-1.5 text-right font-medium">
+                รวมทั้งหมด {{ totalAmount.toLocaleString('th-TH') }} บาท
+              </p>
             </div>
 
             <!-- ── เลือกวิธีชำระเงิน (Thongchai595-6) ── -->
@@ -165,14 +195,21 @@
                   class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl"
                 >
                   <div
-                    class="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-gray-100"
-                    :class="acc.bankLogo ? 'bg-white' : 'bg-gray-200'"
+                    class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
+                    :style="bankInfo(acc.bankCode).logo ? {} : { background: bankInfo(acc.bankCode).bg }"
                   >
-                    <img v-if="acc.bankLogo" :src="acc.bankLogo" class="w-full h-full object-cover" :alt="acc.bankCode" />
-                    <span v-else class="text-xs font-bold text-gray-600">{{ (acc.bankCode || 'BK').slice(0, 2) }}</span>
+                    <img
+                      v-if="bankInfo(acc.bankCode).logo"
+                      :src="bankInfo(acc.bankCode).logo"
+                      :alt="bankInfo(acc.bankCode).nameTh"
+                      class="w-full h-full object-cover"
+                    />
+                    <span v-else class="text-xs font-bold" :style="{ color: bankInfo(acc.bankCode).color }">
+                      {{ (acc.bankCode || 'BK').slice(0, 2) }}
+                    </span>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gray-800">{{ acc.bankName || acc.bankCode }}</p>
+                    <p class="text-sm font-semibold text-gray-800">{{ bankInfo(acc.bankCode).nameTh }}</p>
                     <p class="text-sm text-gray-600 font-mono">{{ acc.accountNumber }}</p>
                     <p class="text-xs text-gray-400">{{ acc.accountName }}</p>
                   </div>
@@ -202,7 +239,7 @@
                 <div>
                   <p class="text-sm font-bold text-green-800">ชำระด้วยเงินสดกับคนขับโดยตรง</p>
                   <p class="text-xs text-green-700 mt-1 leading-relaxed">
-                    เตรียมเงิน <span class="font-extrabold text-green-900">{{ booking?.price?.toLocaleString('th-TH') }} บาท</span>
+                    เตรียมเงิน <span class="font-extrabold text-green-900">{{ totalAmount.toLocaleString('th-TH') }} บาท</span>
                     มอบให้คนขับเมื่อถึงจุดหมาย
                   </p>
                 </div>
@@ -213,21 +250,6 @@
                 </svg>
                 <p class="text-xs text-amber-700">กรุณาเตรียมเงินให้พอดี คนขับอาจไม่มีทอนเหรียญ</p>
               </div>
-              <!-- หมายเหตุเพิ่มเติม -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  หมายเหตุ
-                  <span class="text-gray-400 font-normal">(ไม่บังคับ)</span>
-                </label>
-                <textarea
-                  v-model="memo"
-                  rows="2"
-                  maxlength="300"
-                  placeholder="เช่น นัดจ่ายที่จุดส่ง / แจ้งคนขับแล้ว"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none transition-colors"
-                />
-                <p class="text-xs text-gray-400 text-right mt-0.5">{{ memo.length }}/300</p>
-              </div>
             </div>
           </div>
 
@@ -235,7 +257,7 @@
           <div v-if="step === 2 && paymentMethod === 'transfer'">
             <p class="text-sm text-gray-500 mb-4">
               อัปโหลดรูปสลิปหรือภาพหน้าจอยืนยันการโอนเงินจำนวน
-              <span class="font-bold text-gray-800">{{ booking?.price?.toLocaleString('th-TH') }} บาท</span>
+              <span class="font-bold text-gray-800">{{ totalAmount.toLocaleString('th-TH') }} บาท</span>
             </p>
 
             <!-- Upload drop zone -->
@@ -305,22 +327,6 @@
               @change="onFileSelected"
             />
 
-            <!-- Memo input -->
-            <div class="mt-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                หมายเหตุ
-                <span class="text-gray-400 font-normal">(ไม่บังคับ)</span>
-              </label>
-              <textarea
-                v-model="memo"
-                rows="2"
-                maxlength="300"
-                placeholder="เช่น โอนเมื่อ 14:30 น. วันที่ 2 มี.ค. 68"
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition-colors"
-              />
-              <p class="text-xs text-gray-400 text-right mt-0.5">{{ memo.length }}/300</p>
-            </div>
-
             <!-- Upload error message -->
             <p v-if="uploadError" class="mt-2 text-sm text-red-600 flex items-center gap-1">
               <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -346,7 +352,7 @@
                     <p class="text-xs text-gray-600">ผู้รับ: <span class="font-semibold text-gray-800">{{ booking?.driver?.name }}</span></p>
                     <p class="text-xs text-gray-600">
                       จำนวน:
-                      <span class="font-bold text-blue-700 text-sm">{{ booking?.price?.toLocaleString('th-TH') }} บาท</span>
+                      <span class="font-bold text-blue-700 text-sm">{{ totalAmount.toLocaleString('th-TH') }} บาท</span>
                     </p>
                     <p class="text-xs text-gray-600">
                       วิธีชำระ:
@@ -355,6 +361,13 @@
                       </span>
                     </p>
                     <p class="text-xs text-gray-500">{{ booking?.origin }} → {{ booking?.destination }}</p>
+                    <!-- Selected friends summary -->
+                    <template v-if="selectedFriendIds.size > 0">
+                      <p class="text-xs text-blue-600 mt-1 font-medium">
+                        ชำระแทน {{ selectedFriendIds.size }} คน:
+                        {{ fellowPassengers.filter(f => selectedFriendIds.has(f.bookingId)).map(f => f.name).join(', ') }}
+                      </p>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -369,12 +382,6 @@
                   <p class="text-xs text-white font-medium truncate">{{ slipFile?.name }}</p>
                 </div>
               </div>
-            </div>
-
-            <!-- Memo display -->
-            <div v-if="memo" class="p-3 bg-gray-50 border border-gray-200 rounded-xl mb-4">
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">หมายเหตุ</p>
-              <p class="text-sm text-gray-700">{{ memo }}</p>
             </div>
 
             <!-- Disclaimer -->
@@ -396,7 +403,7 @@
             @click="goBack"
             class="px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
           >
-            ← ย้อนกลับ
+            ย้อนกลับ
           </button>
 
           <!-- Step 1: ปุ่มปรับตามวิธีชำระ -->
@@ -408,7 +415,7 @@
               ? 'bg-green-600 hover:bg-green-700'
               : 'bg-blue-600 hover:bg-blue-700'"
           >
-            {{ paymentMethod === 'cash' ? 'ดำเนินการต่อ →' : 'โอนแล้ว → แนบสลิป' }}
+            {{ paymentMethod === 'cash' ? 'ดำเนินการต่อ' : 'แนบสลิป' }}
           </button>
 
           <!-- Step 2 → 3: ตรวจสอบ (โอนเงิน เท่านั้น) -->
@@ -417,7 +424,7 @@
             @click="nextStep"
             class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all"
           >
-            ตรวจสอบก่อนส่ง →
+            ตรวจสอบ
           </button>
 
           <!-- Step 3: ยืนยัน (ปรับตามวิธีชำระ) -->
@@ -436,7 +443,7 @@
               </svg>
               กำลังส่ง...
             </span>
-            <span v-else>{{ paymentMethod === 'cash' ? '✓ แจ้งชำระเงินสด' : '✓ ส่งหลักฐาน' }}</span>
+            <span v-else>{{ paymentMethod === 'cash' ? 'แจ้งชำระเงินสด' : 'ส่งหลักฐาน' }}</span>
           </button>
         </div>
 
@@ -452,6 +459,27 @@
 
 import { ref, computed, watch } from 'vue'
 import { useToast } from '~/composables/useToast'
+import { useAuth } from '~/composables/useAuth'
+
+// ── ข้อมูลธนาคารไทย ────────────────────────────────────────
+const BANK_MAP = {
+  KBANK:  { nameTh: 'ธนาคารกสิกรไทย',          color: '#1d9b45', bg: '#e8f5ec', logo: '/banks/kbank.png' },
+  SCB:    { nameTh: 'ธนาคารไทยพาณิชย์',         color: '#4a154b', bg: '#f3e8f7', logo: '/banks/scb.png' },
+  BBL:    { nameTh: 'ธนาคารกรุงเทพ',            color: '#1a3a8f', bg: '#e8edfa', logo: '/banks/bangkok.png' },
+  KTB:    { nameTh: 'ธนาคารกรุงไทย',            color: '#009fda', bg: '#e0f5fd', logo: '/banks/krungthai.png' },
+  BAY:    { nameTh: 'ธนาคารกรุงศรีอยุธยา',      color: '#c8a000', bg: '#fffbe6', logo: '/banks/krungsri.png' },
+  TTB:    { nameTh: 'ธนาคารทหารไทยธนชาต',       color: '#d81b60', bg: '#fce4ec', logo: '/banks/ttb.png' },
+  GSB:    { nameTh: 'ธนาคารออมสิน',             color: '#6a1b9a', bg: '#f3e5f5', logo: '/banks/gsb.png' },
+  BAAC:   { nameTh: 'ธนาคารเพื่อการเกษตรฯ',    color: '#2e7d32', bg: '#e8f5e9', logo: '/banks/baac.png' },
+  UOB:    { nameTh: 'ธนาคารยูโอบี',             color: '#dc2626', bg: '#fef2f2', logo: null },
+  CIMBT:  { nameTh: 'ธนาคารซีไอเอ็มบีไทย',     color: '#b91c1c', bg: '#fef2f2', logo: null },
+  LHBANK: { nameTh: 'ธนาคารแลนด์แอนด์เฮ้าส์', color: '#0f766e', bg: '#f0fdfa', logo: null },
+  TISCO:  { nameTh: 'ธนาคารทิสโก้',             color: '#1e3a8a', bg: '#eff6ff', logo: null },
+  KKP:    { nameTh: 'ธนาคารเกียรตินาคินภัทร',   color: '#92400e', bg: '#fef3c7', logo: null },
+  OTHER:  { nameTh: 'ธนาคารอื่น',               color: '#6b7280', bg: '#f3f4f6', logo: null },
+}
+
+const bankInfo = (bankCode) => BANK_MAP[bankCode] || BANK_MAP['OTHER']
 
 // ── Props & Emits ──────────────────────────────────────────
 const props = defineProps({
@@ -460,7 +488,7 @@ const props = defineProps({
   /**
    * ข้อมูล booking ที่ส่งมาจาก myTrip/index.vue
    * ควรมีฟิลด์:
-   *   id, price, seats, origin, destination,
+   *   id, routeId, price, seats, origin, destination,
    *   driver: { name, image },
    *   driverPayment: { promptPayId, bankAccounts[] }
    */
@@ -471,6 +499,7 @@ const emit = defineEmits(['close', 'submitted'])
 
 const { $api } = useNuxtApp()
 const { toast } = useToast()
+const { user } = useAuth()
 
 // ── State ──────────────────────────────────────────────────
 const step          = ref(1)
@@ -481,11 +510,14 @@ const paymentMethod = ref('transfer')
 const qrError  = ref(false)
 const copied   = ref(false)
 
+// ── Friend payment state ──────────────────────────────────
+const fellowPassengers = ref([])   // ผู้ร่วมเดินทางคนอื่น
+const selectedFriendIds = ref(new Set()) // bookingId ที่เลือกจ่ายแทน
+
 // Step-2 state
 const fileInputRef  = ref(null)
 const slipFile      = ref(null)
 const slipPreviewUrl = ref(null)
-const memo          = ref('')
 const uploadError   = ref('')
 const isDragging    = ref(false)
 
@@ -495,6 +527,21 @@ const isSubmitting  = ref(false)
 // ── Computed ───────────────────────────────────────────────
 const promptPayId  = computed(() => props.booking?.driverPayment?.promptPayId || null)
 const bankAccounts = computed(() => props.booking?.driverPayment?.bankAccounts || [])
+
+const totalAmount = computed(() => {
+  let total = props.booking?.price || 0
+  for (const f of fellowPassengers.value) {
+    if (selectedFriendIds.value.has(f.bookingId)) total += f.price
+  }
+  return total
+})
+
+const toggleFriend = (bookingId) => {
+  const s = new Set(selectedFriendIds.value)
+  if (s.has(bookingId)) s.delete(bookingId)
+  else s.add(bookingId)
+  selectedFriendIds.value = s
+}
 
 // ── Step labels & navigation (Thongchai595-6) ──────────────
 // โอนเงิน = 3 steps, เงินสด = 2 steps (ข้ามขั้นแนบสลิป)
@@ -701,40 +748,49 @@ function clearFile() {
 async function submitPayment() {
   isSubmitting.value = true
   try {
-    if (paymentMethod.value === 'cash') {
-      // ── เงินสด: แจ้งคนขับโดยไม่ต้องส่งไฟล์ ──
-      // TODO (Backend): implement POST /bookings/:id/payment-cash
-      await $api(`/bookings/${props.booking.id}/payment-cash`, {
-        method : 'POST',
-        body   : { memo: memo.value.trim() || undefined },
-      })
-      toast.success('แจ้งชำระเงินสำเร็จ', 'ระบบจะแจ้งคนขับว่าคุณจะชำระด้วยเงินสด')
-    } else {
-      // ── โอนเงิน: ส่งสลิปพร้อมไฟล์ ──
-      if (!slipFile.value) {
-        toast.error('ไม่มีไฟล์', 'กรุณาแนบสลิปการโอนเงิน')
-        step.value = 2
-        isSubmitting.value = false
-        return
-      }
-      const formData = new FormData()
-      formData.append('slip', slipFile.value)
-      if (memo.value.trim()) formData.append('memo', memo.value.trim())
+    const friendIds = [...selectedFriendIds.value]
 
-      // TODO (Backend): implement POST /bookings/:id/payment-slip
-      await $api(`/bookings/${props.booking.id}/payment-slip`, {
-        method : 'POST',
-        body   : formData,
-      })
-      toast.success('ส่งหลักฐานสำเร็จ', 'ระบบจะแจ้งคนขับให้ยืนยันการชำระเงิน')
+    if (paymentMethod.value === 'cash') {
+      // แจ้ง backend ว่า passenger เลือกจ่ายเงินสด (method → CASH, status ยัง PENDING)
+      await $api(`/bookings/${props.booking.id}/payment/cash`, { method: 'PATCH' })
+      // แจ้งเพื่อนที่เลือกจ่ายแทนด้วย
+      for (const bookingId of friendIds) {
+        await $api(`/bookings/${bookingId}/payment/cash`, { method: 'PATCH' })
+      }
+      const extra = friendIds.length > 0 ? ` (รวม ${friendIds.length} คน)` : ''
+      toast.success('รับทราบแล้ว', `กรุณาเตรียมเงินสดให้พร้อม${extra} คนขับจะยืนยันการรับเงินให้`)
+      emit('submitted', { bookingId: props.booking.id, method: 'cash' })
+      return
     }
-    emit('submitted', { bookingId: props.booking.id, method: paymentMethod.value })
+
+    // โอนเงิน: ส่งสลิป
+    if (!slipFile.value) {
+      toast.error('ไม่มีไฟล์', 'กรุณาแนบสลิปการโอนเงิน')
+      step.value = 2
+      isSubmitting.value = false
+      return
+    }
+
+    // ส่งสลิปสำหรับ booking ของตัวเอง
+    const formData = new FormData()
+    formData.append('slip', slipFile.value)
+    formData.append('method', 'PROMPTPAY')
+    await $api(`/bookings/${props.booking.id}/payment/slip`, { method: 'POST', body: formData })
+
+    // ส่งสลิปเดิมให้กับ booking ของเพื่อนที่เลือก
+    for (const bookingId of friendIds) {
+      const fd = new FormData()
+      fd.append('slip', slipFile.value)
+      fd.append('method', 'PROMPTPAY')
+      await $api(`/bookings/${bookingId}/payment/slip`, { method: 'POST', body: fd })
+    }
+
+    const extra = friendIds.length > 0 ? ` (รวม ${friendIds.length + 1} รายการ)` : ''
+    toast.success('ส่งหลักฐานสำเร็จ', `ระบบจะแจ้งคนขับให้ยืนยันการชำระเงิน${extra}`)
+    emit('submitted', { bookingId: props.booking.id, method: 'transfer' })
   } catch (err) {
     console.error('[PaymentSlipModal] submitPayment error:', err)
-    toast.error(
-      paymentMethod.value === 'cash' ? 'แจ้งชำระเงินไม่สำเร็จ' : 'ส่งหลักฐานไม่สำเร็จ',
-      err?.data?.message || 'กรุณาลองใหม่อีกครั้ง'
-    )
+    toast.error('ส่งหลักฐานไม่สำเร็จ', err?.data?.message || 'กรุณาลองใหม่อีกครั้ง')
   } finally {
     isSubmitting.value = false
   }
@@ -746,19 +802,39 @@ function handleClose() {
   emit('close')
 }
 
-// reset ทุกครั้งที่ show เปลี่ยนจาก false → true
-watch(() => props.show, (newVal) => {
+// reset + fetch fellow passengers ทุกครั้งที่ show เปลี่ยนจาก false → true
+watch(() => props.show, async (newVal) => {
   if (newVal) {
-    step.value           = 1
-    paymentMethod.value  = 'transfer'
-    qrError.value        = false
-    copied.value         = false
-    slipFile.value       = null
-    slipPreviewUrl.value = null
-    memo.value           = ''
-    uploadError.value    = ''
-    isDragging.value     = false
-    isSubmitting.value   = false
+    step.value            = 1
+    paymentMethod.value   = 'transfer'
+    qrError.value         = false
+    copied.value          = false
+    slipFile.value        = null
+    slipPreviewUrl.value  = null
+    uploadError.value     = ''
+    isDragging.value      = false
+    isSubmitting.value    = false
+    selectedFriendIds.value = new Set()
+    fellowPassengers.value  = []
+
+    // ดึงรายชื่อผู้ร่วมเดินทางในเส้นทางเดียวกัน
+    if (props.booking?.routeId) {
+      try {
+        const route = await $api(`/routes/${props.booking.routeId}`)
+        if (route?.bookings && route.pricePerSeat) {
+          fellowPassengers.value = route.bookings
+            .filter(b => b.status === 'COMPLETED' && b.passengerId !== user.value?.id)
+            .map(b => ({
+              bookingId: b.id,
+              name: `${b.passenger?.firstName || ''} ${b.passenger?.lastName || ''}`.trim() || 'ผู้โดยสาร',
+              seats: b.numberOfSeats || 1,
+              price: (b.numberOfSeats || 1) * route.pricePerSeat,
+            }))
+        }
+      } catch (e) {
+        console.error('[PaymentSlipModal] fetch route error:', e)
+      }
+    }
   }
 })
 </script>
