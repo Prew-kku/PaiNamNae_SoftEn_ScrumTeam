@@ -234,7 +234,7 @@
             :show="modal.show"
             :title="modal.action === 'approve' ? 'อนุมัติคำร้อง' : 'ปฏิเสธคำร้อง'"
             :message="`คำร้องของ ${getUserDisplayName(modal.request?.user)}`"
-            :confirm-text="modal.action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'"
+            :confirm-text="modal.loading ? 'กำลังดำเนินการ...' : (modal.action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ')"
             :variant="modal.action === 'approve' ? 'primary' : 'danger'"
             @confirm="confirmModal"
             @cancel="closeModal"
@@ -453,7 +453,8 @@ const modal = reactive({
     show: false,
     action: '',       // 'approve', 'reject'
     request: null,
-    adminNote: ''
+    adminNote: '',
+    loading: false
 })
 
 function openModal(action, r) {
@@ -467,13 +468,20 @@ function closeModal() {
     modal.show = false
     modal.request = null
     modal.adminNote = ''
+    modal.loading = false
 }
 
 async function confirmModal() {
-    if (!modal.request) return
+    if (!modal.request || modal.loading) return
     const r = modal.request
     const token = useCookie('token').value || (process.client ? localStorage.getItem('token') : '')
 
+    if (modal.action !== 'approve' && !modal.adminNote.trim()) {
+        toast.error('กรุณาระบุเหตุผล', 'การปฏิเสธต้องระบุเหตุผลเสมอ')
+        return
+    }
+
+    modal.loading = true
     try {
         if (modal.action === 'approve') {
             await $fetch(`/deletion/admin/requests/${r.id}/approve`, {
@@ -483,10 +491,6 @@ async function confirmModal() {
             })
             toast.success('อนุมัติคำร้องแล้ว', 'ระบบจะทำการลบบัญชีในอีก 90 วัน')
         } else {
-            if (!modal.adminNote.trim()) {
-                toast.error('กรุณาระบุเหตุผล', 'การปฏิเสธต้องระบุเหตุผลเสมอ')
-                return
-            }
             await $fetch(`/deletion/admin/requests/${r.id}/reject`, {
                 baseURL: config.public.apiBase,
                 method: 'PATCH',
