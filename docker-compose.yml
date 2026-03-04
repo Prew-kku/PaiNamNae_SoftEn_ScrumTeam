@@ -69,8 +69,8 @@ services:
     ports:
       - "3001:3000"
     environment:
-      #NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
-      NUXT_PUBLIC_API_BASE: "http://localhost:3000/api/"
+      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
+      #NUXT_PUBLIC_API_BASE: "http://localhost:3000/api/"
 
       # ใช้ Key ตัวเดียวกับ Backend (ดึงจาก .env เหมือนกัน)
       NUXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
