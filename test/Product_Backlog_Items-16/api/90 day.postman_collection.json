@@ -16,14 +16,11 @@
         "method": "PUT",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/test/cron/fast-forward/cmm9fkg6p0005wljdzw82zj8y",
-          "protocol": "http",
+          "raw": "{{base_url}}/test/cron/fast-forward/cmm9fkg6p0005wljdzw82zj8y",
           "host": [
-            "localhost"
+            "{{base_url}}"
           ],
-          "port": "3000",
           "path": [
-            "api",
             "test",
             "cron",
             "fast-forward",
@@ -39,14 +36,11 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/api/test/cron/deletion",
-          "protocol": "http",
+          "raw": "{base_url}}/test/cron/deletion",
           "host": [
-            "localhost"
+            "{base_url}}"
           ],
-          "port": "3000",
           "path": [
-            "api",
             "test",
             "cron",
             "deletion"
