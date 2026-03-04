@@ -71,19 +71,7 @@ const getLogs = async (query) => {
                 }
                 : {}),
             NOT: {
-                OR: [
-                    {
-                        request: {
-                            user: {
-                                firstName: "Deleted",
-                                lastName: "User"
-                            }
-                        }
-                    },
-                    {
-                        requestId: null
-                    }
-                ]
+                requestId: null
             }
         };
 

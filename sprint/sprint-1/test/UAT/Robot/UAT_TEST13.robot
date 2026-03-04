@@ -5,8 +5,8 @@ Library           Collections
 
 *** Variables ***
 ${BASE_URL}       https://painamnaesoftenscrumteam-production.up.railway.app
-${TEST_USERNAME}  Test2
-${TEST_PASSWORD}  Test2Test2
+${TEST_USERNAME}  Test_UAT
+${TEST_PASSWORD}  123456789
 ${ADMIN_USERNAME}    admin_UAT
 ${ADMIN_PASS}     passadmin
 
@@ -69,6 +69,8 @@ Test Cronjob 90 Days Works With Deployed API
     # 9) ตรวจสอบผลว่าคำร้องถูกประมวลผลแล้ว
     Log To Console    [STEP] Trigger cron and verify DELETED
     Wait Until Keyword Succeeds    30 sec    5 sec    Trigger Cron And Request Should Become Deleted    ${request_id}
+    Log To Console    [STEP] Verify audit trail contains anonymization/deletion
+    Wait Until Keyword Succeeds    20 sec    5 sec    Request Should Have Deletion Audit    ${request_id}
     Log To Console    [DONE] Cron 90-day test passed
 
 *** Keywords ***
@@ -93,6 +95,17 @@ Trigger Cron And Request Should Become Deleted
     Should Be Equal As Integers    ${detail_resp.status_code}    200
     ${detail_json}=    Evaluate    $detail_resp.json()
     Should Be Equal As Strings    ${detail_json['status']}    DELETED
+
+Request Should Have Deletion Audit
+    [Arguments]    ${request_id}
+    ${detail_resp}=    GET On Session    admin_api    /api/deletion/admin/requests/${request_id}
+    Should Be Equal As Integers    ${detail_resp.status_code}    200
+    ${detail_json}=    Evaluate    $detail_resp.json()
+    ${audits}=    Set Variable    ${detail_json['audits']}
+    ${audit_count}=    Get Length    ${audits}
+    Should Be True    ${audit_count} > 0
+    ${has_deleted_or_anonymized}=    Evaluate    any(a.get('status') in ['ANONYMIZED', 'DELETED'] for a in $audits)
+    Should Be True    ${has_deleted_or_anonymized}
 
 Approve Request Should Succeed
     [Arguments]    ${request_id}
