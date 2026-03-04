@@ -81,7 +81,38 @@
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "name": "กระตุ้น Cron Job",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/test/cron/deletion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "test",
+                "cron",
+                "deletion"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"message\": \"Deletion cron job executed successfully.\"\n}"
+        }
+      ]
     }
   ]
 }
