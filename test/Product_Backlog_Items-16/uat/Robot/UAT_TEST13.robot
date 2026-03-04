@@ -10,7 +10,7 @@ Suite Teardown    Close All Browsers
 ${WEB_URL}          http://csse4369.cpkku.com/login
 ${BASE_URL}         https://painamnaesoftenscrumteam-production.up.railway.app
 ${BROWSER}          chrome
-${TEST_USERNAME}    Test9
+${TEST_USERNAME}    Test12
 ${TEST_PASSWORD}    Isaac1234
 ${ADMIN_USERNAME}   admin_UAT
 ${ADMIN_PASS}       passadmin
@@ -99,21 +99,23 @@ Admin Approve Deletion Request Via UI
     Wait Until Element Is Visible    xpath=//span[contains(@class, 'text-blue-600')]    timeout=10s
 
     Click Element   xpath=//span[contains(@class, 'text-blue-600')]
-    Wait Until Element Is Visible    xpath=//a[contains(., 'Dashboard')]    timeout=5s
-    Click Element                    xpath=//a[contains(., 'Dashboard')]
+    Wait Until Element Is Visible    xpath=//a[@href='/admin/users' and normalize-space()='Dashboard']    timeout=10s
+    Execute JavaScript               document.querySelector("a[href='/admin/users']")?.click();
     Sleep    1s
 
-    Wait Until Element Is Visible    xpath=//span[contains(text(), 'All Request')]    timeout=10s
-    Click Element                    xpath=//span[contains(text(), 'All Request')]
+    Wait Until Element Is Visible    xpath=//a[@href='/admin/allrequests']//span[normalize-space()='All Request']    timeout=10s
+    Click Element                    xpath=//a[@href='/admin/allrequests']
     Sleep    2s
 
-    Wait Until Element Is Visible    xpath=//i[contains(@class, 'fa-check')]    timeout=10s
-    Click Element                    xpath=//i[contains(@class, 'fa-check')]
+    Wait Until Element Is Not Visible    css=.modal-overlay    timeout=10s
+    Wait Until Element Is Visible    xpath=//i[contains(@class, 'fa-check')]/ancestor::button[1]    timeout=10s
+    Click Button                     xpath=(//i[contains(@class, 'fa-check')]/ancestor::button[1])[1]
     Sleep    1s
 
-    Wait Until Element Is Visible    xpath=//button[contains(text(), 'อนุมัติ')]    timeout=5s
-    Click Button    xpath=//button[contains(text(), 'อนุมัติ')]
-    Sleep    3s
+    Wait Until Element Is Visible    xpath=//div[contains(@class,'modal-content')]//button[normalize-space()='อนุมัติ']    timeout=10s
+    Click Button                     xpath=//div[contains(@class,'modal-content')]//button[normalize-space()='อนุมัติ']
+    Run Keyword And Ignore Error     Wait Until Element Is Not Visible    css=.modal-overlay    timeout=20s
+    Sleep    1s
 
     Wait Until Page Contains    อนุมัติแล้ว    timeout=10s
     Close Browser
