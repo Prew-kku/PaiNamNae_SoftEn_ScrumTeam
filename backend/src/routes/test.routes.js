@@ -29,7 +29,10 @@ router.put('/cron/fast-forward/:id', async (req, res) => {
 
         await prisma.deletionRequest.update({
             where: { id },
-            data: { approvedAt: pastDate }
+            data: {
+                approvedAt: pastDate,
+                scheduledDeleteAt: pastDate,
+            }
         });
 
         res.status(200).json({
