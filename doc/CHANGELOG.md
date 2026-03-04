@@ -79,3 +79,21 @@
 
 ### Ammika356-3
 - อัปโหลดเอกสาร ADAPT-blueprint (PBI 16, Acceptance Test, Customer Invisible, UI) ในรูปแบบ PNG แทน PDF เดิม (`doc/`)
+
+---
+
+## [2026-03-05]
+
+### Jularat387-4
+- อัพโหลด sprint backlog ลง `sprint-backlog/`
+
+### pichamon395-4
+- เพิ่ม `USERMANUAL.md` (PBI-16, PBI-bonus), `CHANGELOG.md` และอัปเดต API Testing collection (85/85 assertions ผ่าน)
+- แก้ bug modal ไม่ปิดหลัง admin ปฏิเสธคำขอลบบัญชีใน `admin/allrequests/index.vue` — เพิ่ม loading state และข้อความ "กำลังดำเนินการ..."
+
+### Kittikorn587-5
+- ทดสอบ 90-day time machine API บน Production สำเร็จ
+- อัปเดต Postman collection — แก้ API paths และเพิ่ม response structure สำหรับ cron deletion
+
+### Siwawit402-3
+- เพิ่ม UAT Robot tests สำหรับ PBI-bonus (UAT_TEST08–14) และเอกสารชำระเงินใน `test/Product_Backlog_Items-bonus/uat/`
