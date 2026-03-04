@@ -16,19 +16,52 @@
         "method": "PUT",
         "header": [],
         "url": {
-          "raw": "{{base_url}}/test/cron/fast-forward/cmm9fkg6p0005wljdzw82zj8y",
+          "raw": "{{base_url}}/api/test/cron/fast-forward/cmmcfjudu0160ckpkf2hhdmub",
           "host": [
             "{{base_url}}"
           ],
           "path": [
+            "api",
             "test",
             "cron",
             "fast-forward",
-            "cmm9fkg6p0005wljdzw82zj8y"
+            "cmmcfjudu0160ckpkf2hhdmub"
           ]
         }
       },
-      "response": []
+      "response": [
+        {
+          "name": "การจำลองข้ามเวลา 90 วัน",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/test/cron/fast-forward/cmmcfjudu0160ckpkf2hhdmub",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "test",
+                "cron",
+                "fast-forward",
+                "cmmcfjudu0160ckpkf2hhdmub"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"message\": \"Time fast-forwarded 90 days. The request is now eligible for deletion.\",\n    \"newDate\": \"2025-12-03T19:57:16.413Z\"\n}"
+        }
+      ]
     },
     {
       "name": "กระตุ้น Cron Job",
@@ -36,11 +69,12 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "{base_url}}/test/cron/deletion",
+          "raw": "{{base_url}}/api/test/cron/deletion",
           "host": [
-            "{base_url}}"
+            "{{base_url}}"
           ],
           "path": [
+            "api",
             "test",
             "cron",
             "deletion"
