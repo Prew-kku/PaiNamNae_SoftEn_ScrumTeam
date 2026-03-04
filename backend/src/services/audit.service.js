@@ -70,6 +70,9 @@ const getLogs = async (query) => {
                     ],
                 }
                 : {}),
+            NOT: {
+                requestId: null
+            }
         };
 
         const [total, audits] = await Promise.all([

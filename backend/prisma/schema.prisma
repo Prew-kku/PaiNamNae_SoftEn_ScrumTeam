@@ -25,6 +25,7 @@ enum RouteStatus {
   COMPLETED
   CANCELLED
   IN_TRANSIT
+  DRIVER_ARRIVED
 }
 
 enum BookingStatus {
@@ -32,6 +33,20 @@ enum BookingStatus {
   CONFIRMED
   REJECTED
   CANCELLED
+  COMPLETED
+}
+
+enum PaymentMethod {
+  CASH
+  PROMPTPAY
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING     // รอชำระ (trip complete แล้ว)
+  SUBMITTED   // passenger ส่งสลิปแล้ว
+  VERIFIED    // driver ยืนยันรับเงินแล้ว
+  REJECTED    // driver ปฏิเสธสลิป
 }
 
 enum CancelReason {
@@ -85,6 +100,8 @@ model User {
   passengerSuspendedUntil DateTime?
   driverSuspendedUntil    DateTime?
   driverVerification    DriverVerification?
+  promptPayId   String?       // เก็บเบอร์ PromptPay (ตั้งชื่อให้ตรงกับหน้าบ้าน)
+  bankAccounts  BankAccount[] // เชื่อมความสัมพันธ์ว่า 1 User มีได้หลายบัญชีธนาคาร
   vehicles              Vehicle[]
   notification          Notification[]
   createdRoutes         Route[]             @relation("DriverRoutes")
@@ -212,6 +229,27 @@ model Booking {
   pickupLocation  Json          @db.Json
   dropoffLocation Json          @db.Json
   createdAt       DateTime      @default(now())
+  payment         Payment?
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  bookingId    String        @unique
+  booking      Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount       Float
+  method       PaymentMethod @default(PROMPTPAY)
+  status       PaymentStatus @default(PENDING)
+  slipUrl      String?
+  slipPublicId String?
+  submittedAt  DateTime?
+  verifiedAt   DateTime?
+  rejectedAt   DateTime?
+  rejectReason String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
 }
 
 enum DeletionStatus {
@@ -264,4 +302,18 @@ model DeletionAudit {
   @@index([requestId])
   @@index([status])
   @@index([eventTime])
+}
+
+model BankAccount {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankCode       String   // เช่น 'KBANK', 'SCB', 'OTHER'
+  customBankName String?  // ชื่อธนาคารกรณีเลือก OTHER
+  accountNumber  String   // เลขบัญชี
+  accountName    String   // ชื่อบัญชี
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
 }

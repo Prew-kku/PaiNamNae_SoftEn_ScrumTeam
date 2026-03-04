@@ -205,6 +205,7 @@ const form = reactive({
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
+
 });
 
 let originalUserData = null;
@@ -364,7 +365,3 @@ const handleDeleteRequest = async (requestData) => {
 
 
 </script>
-
-<style scoped>
-/* Scoped styles can be added here if needed */
-</style>

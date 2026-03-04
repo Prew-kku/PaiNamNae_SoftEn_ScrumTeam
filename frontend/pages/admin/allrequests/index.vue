@@ -133,7 +133,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-700">{{ r.user.email }}</td>
+                                    <td class="px-4 py-3 text-gray-700">{{ r.user?.email }}</td>
                                     <td class="px-4 py-3 text-gray-700">{{ r.user.username }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-700">
                                         {{ r.user.role }}
@@ -230,44 +230,32 @@
         </main>
 
         <!-- Admin Note Modal -->
-        <div v-if="modal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal">
-            <div class="w-full max-w-md p-6 mx-4 bg-white rounded-lg shadow-xl">
-                <h3 class="mb-1 text-lg font-semibold text-gray-800">
-                    {{ modal.action === 'approve' ? 'อนุมัติคำร้อง' : 'ปฏิเสธคำร้อง' }}
-                </h3>
-                <p class="mb-4 text-sm text-gray-500">
-                    คำร้องของ {{ getUserDisplayName(modal.request?.user) }}
-                </p>
-
-                <template v-if="modal.action !== 'approve'">
-                    <label class="block mb-1 text-sm font-medium text-gray-700">หมายเหตุแอดมิน</label>
-                    <textarea v-model="modal.adminNote" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="ระบุหมายเหตุ (ไม่บังคับ)"></textarea>
-                </template>
-                <div v-else class="p-4 mb-4 text-sm text-yellow-700 bg-yellow-50 rounded-md">
-                    ยืนยันการอนุมัติ? ระบบจะทำการลบบัญชีและแจ้งเตือนผู้ใช้ทางอีเมลทันที
-                </div>
-
-                <div class="flex justify-end gap-3 mt-4">
-                    <button @click="closeModal"
-                        class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
-                        ยกเลิก
-                    </button>
-                    <button @click="confirmModal"
-                        class="px-4 py-2 text-sm text-white rounded-md cursor-pointer"
-                        :class="modal.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'">
-                        {{ modal.action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ' }}
-                    </button>
-                </div>
+        <ConfirmModal
+            :show="modal.show"
+            :title="modal.action === 'approve' ? 'อนุมัติคำร้อง' : 'ปฏิเสธคำร้อง'"
+            :message="`คำร้องของ ${getUserDisplayName(modal.request?.user)}`"
+            :confirm-text="modal.action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'"
+            :variant="modal.action === 'approve' ? 'primary' : 'danger'"
+            @confirm="confirmModal"
+            @cancel="closeModal"
+        >
+            <div v-if="modal.action !== 'approve'" class="mt-2">
+                <label class="block mb-1 text-sm font-medium text-gray-700">หมายเหตุแอดมิน</label>
+                <textarea v-model="modal.adminNote" rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="ระบุหมายเหตุ (บังคับสำหรับการปฏิเสธ)"></textarea>
             </div>
-        </div>
+            <div v-else class="p-4 text-sm text-yellow-700 bg-yellow-50 rounded-md">
+                ยืนยันการอนุมัติ? ระบบจะทำการลบบัญชีและแจ้งเตือนผู้ใช้ทางอีเมลทันที
+            </div>
+        </ConfirmModal>
     </div>
 </template>
 
 <script setup>
 import AdminHeader from '~/components/admin/AdminHeader.vue'
 import AdminSidebar from '~/components/admin/AdminSidebar.vue'
+import ConfirmModal from '~/components/ConfirmModal.vue'
 import { useToast } from '~/composables/useToast'
 
 const { toast } = useToast()
@@ -444,8 +432,8 @@ function statusLabel(status) {
 
 function getUserDisplayName(user) {
     if (!user) return '-'
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
-    return fullName || user.username || user.email || user.id || '-'
+    const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
+    return fullName || user.username || user?.email || user.id || '-'
 }
 
 function formatDate(iso) {
@@ -485,25 +473,21 @@ async function confirmModal() {
     if (!modal.request) return
     const r = modal.request
     const token = useCookie('token').value || (process.client ? localStorage.getItem('token') : '')
-    
+
     try {
         if (modal.action === 'approve') {
-            // Approve: Soft delete 90 days
-            // PATCH /api/deletion/admin/requests/:id/approve
-             await $fetch(`/deletion/admin/requests/${r.id}/approve`, {
+            await $fetch(`/deletion/admin/requests/${r.id}/approve`, {
                 baseURL: config.public.apiBase,
                 method: 'PATCH',
                 headers: { Authorization: `Bearer ${token}` }
             })
             toast.success('อนุมัติคำร้องแล้ว', 'ระบบจะทำการลบบัญชีในอีก 90 วัน')
-            
         } else {
-            // Reject: Require reason
             if (!modal.adminNote.trim()) {
                 toast.error('กรุณาระบุเหตุผล', 'การปฏิเสธต้องระบุเหตุผลเสมอ')
                 return
             }
-             await $fetch(`/deletion/admin/requests/${r.id}/reject`, {
+            await $fetch(`/deletion/admin/requests/${r.id}/reject`, {
                 baseURL: config.public.apiBase,
                 method: 'PATCH',
                 headers: { Authorization: `Bearer ${token}` },
@@ -511,14 +495,13 @@ async function confirmModal() {
             })
             toast.success('ปฏิเสธคำร้องแล้ว', 'ระบบได้แจ้งเตือนผู้ใช้เรียบร้อยแล้ว')
         }
-        
-        // Refresh list
+
+        closeModal()
         fetchRequests(pagination.page)
-        
+
     } catch (err) {
         console.error(err)
         toast.error('เกิดข้อผิดพลาด', err?.data?.message || 'ทำรายการไม่สำเร็จ')
-    } finally {
         closeModal()
     }
 }

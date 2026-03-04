@@ -44,6 +44,8 @@
                                                 class="status-badge status-pending">รอดำเนินการ</span>
                                             <span v-else-if="trip.status === 'confirmed'"
                                                 class="status-badge status-confirmed">ยืนยันแล้ว</span>
+                                            <span v-else-if="trip.status === 'completed'"
+                                                class="status-badge status-completed">เสร็จสิ้น</span>
                                             <span v-else-if="trip.status === 'rejected'"
                                                 class="status-badge status-rejected">ปฏิเสธ</span>
                                             <span v-else-if="trip.status === 'cancelled'"
@@ -142,15 +144,17 @@
                                 </div>
 
                                 <div class="flex justify-end space-x-3" :class="{ 'mt-4': selectedTripId !== trip.id }">
-                                    <!-- PENDING: ยกเลิกได้ -->
-                                    <button v-if="trip.status === 'pending'" @click.stop="openCancelModal(trip)"
+                                    <!-- PENDING: ยกเลิกได้ (ยกเว้น driver มาถึงแล้ว/กำลังเดินทาง) -->
+                                    <button v-if="trip.status === 'pending' && !['DRIVER_ARRIVED','IN_TRANSIT','COMPLETED'].includes(trip.routeStatus)"
+                                        @click.stop="openCancelModal(trip)"
                                         class="px-4 py-2 text-sm text-red-600 transition duration-200 border border-red-300 rounded-md hover:bg-red-50">
                                         ยกเลิกการจอง
                                     </button>
 
-                                    <!-- CONFIRMED: เพิ่มปุ่มยกเลิก + คงปุ่มแชท -->
+                                    <!-- CONFIRMED: ยกเลิก + แชท -->
                                     <template v-else-if="trip.status === 'confirmed'">
-                                        <button @click.stop="openCancelModal(trip)"
+                                        <button v-if="!['DRIVER_ARRIVED','IN_TRANSIT','COMPLETED'].includes(trip.routeStatus)"
+                                            @click.stop="openCancelModal(trip)"
                                             class="px-4 py-2 text-sm text-red-600 transition duration-200 border border-red-300 rounded-md hover:bg-red-50">
                                             ยกเลิกการจอง
                                         </button>
@@ -158,6 +162,52 @@
                                             class="px-4 py-2 text-sm text-white transition duration-200 bg-blue-600 rounded-md hover:bg-blue-700">
                                             แชทกับผู้ขับ
                                         </button>
+                                    </template>
+
+                                    <!-- COMPLETED: ชำระเงิน -->
+                                    <template v-else-if="trip.status === 'completed'">
+                                        <div class="flex flex-col items-end gap-2">
+                                            <!-- VERIFIED: ดูใบเสร็จ -->
+                                            <button v-if="trip.paymentStatus === 'VERIFIED'"
+                                                @click.stop="openReceipt(trip)"
+                                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border rounded-md hover:bg-blue-700 transition-colors">
+                                                ดูใบเสร็จ
+                                            </button>
+
+                                            <!-- SUBMITTED / PENDING+CASH: รอยืนยัน + ดูสลิป (row) -->
+                                            <div v-else-if="trip.paymentStatus === 'SUBMITTED' || (trip.paymentStatus === 'PENDING' && trip.paymentMethod === 'CASH')"
+                                                class="flex items-center gap-2">
+                                                <button v-if="trip.paymentSlipUrl && trip.paymentStatus === 'SUBMITTED'"
+                                                    @click.stop="slipPreviewUrl = trip.paymentSlipUrl"
+                                                    class="px-3 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors">
+                                                    ดูสลิป
+                                                </button>
+                                                <button disabled
+                                                    class="px-4 py-2 text-sm font-medium text-amber-600 bg-amber-50 border border-amber-300 rounded-md cursor-default opacity-80">
+                                                    รอคนขับยืนยัน
+                                                </button>
+                                            </div>
+
+                                            <!-- REJECTED / PENDING: ดูสลิป + ส่งสลิปใหม่/ชำระเงิน (row) -->
+                                            <div v-else class="flex items-center gap-2">
+                                                <button v-if="trip.paymentSlipUrl && trip.paymentStatus === 'REJECTED'"
+                                                    @click.stop="slipPreviewUrl = trip.paymentSlipUrl"
+                                                    class="px-3 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors">
+                                                    ดูสลิป
+                                                </button>
+                                                <button @click.stop="openPaymentModal(trip)"
+                                                    class="px-4 py-2 text-sm font-medium text-white transition duration-200 rounded-md"
+                                                    :class="trip.paymentStatus === 'REJECTED' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'">
+                                                    {{ trip.paymentStatus === 'REJECTED' ? 'ส่งสลิปใหม่' : 'ชำระเงิน' }}
+                                                </button>
+                                            </div>
+
+                                            <!-- เหตุผลการปฏิเสธ -->
+                                            <p v-if="trip.paymentStatus === 'REJECTED' && trip.paymentRejectReason"
+                                                class="text-xs text-red-600 text-right max-w-[180px]">
+                                                เหตุผล: {{ trip.paymentRejectReason }}
+                                            </p>
+                                        </div>
                                     </template>
 
                                     <!-- REJECTED / CANCELLED: ลบได้ -->
@@ -219,6 +269,123 @@
         <ConfirmModal :show="isModalVisible" :title="modalContent.title" :message="modalContent.message"
             :confirmText="modalContent.confirmText" :variant="modalContent.variant" @confirm="handleConfirmAction"
             @cancel="closeConfirmModal" />
+
+        <!-- Modal แนบสลิปการโอนเงิน (Thongchai595-6) -->
+        <PaymentSlipModal
+            :show="showPaymentModal"
+            :booking="selectedPaymentTrip"
+            @close="closePaymentModal"
+            @submitted="onPaymentSubmitted"
+        />
+
+        <!-- Slip fullscreen preview (passenger) -->
+        <div
+            v-if="slipPreviewUrl"
+            class="fixed inset-0 z-[70] flex items-center justify-center bg-black/80"
+            @click="slipPreviewUrl = null"
+        >
+            <div class="relative">
+                <img :src="slipPreviewUrl" alt="สลิปการชำระเงิน" class="max-w-sm max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+                <button
+                    @click.stop="slipPreviewUrl = null"
+                    class="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-gray-900"
+                >
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Receipt Modal (passenger) -->
+        <div v-if="isReceiptModalVisible && receiptTrip"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+            @click.self="isReceiptModalVisible = false">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="px-6 py-5 text-white text-center flex-shrink-0 bg-green-600">
+                    <svg class="w-10 h-10 mx-auto mb-2 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="text-lg font-bold">ใบสำคัญรับเงิน</h3>
+                    <p class="text-xs opacity-75 mt-0.5">เลขที่อ้างอิง: {{ receiptTrip.id?.slice(-8).toUpperCase() }}</p>
+                </div>
+
+                <!-- Body -->
+                <div class="px-6 py-4 text-sm overflow-y-auto flex-1 space-y-0">
+                    <!-- ข้อมูลการเดินทาง -->
+                    <div class="space-y-2.5 pb-3 border-b border-dashed border-gray-200">
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">วันที่</span>
+                            <span class="font-medium text-gray-900 text-right">{{ receiptTrip.date }} · {{ receiptTrip.time }}</span>
+                        </div>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">เส้นทาง</span>
+                            <span class="font-medium text-gray-900 text-right max-w-[60%]">{{ receiptTrip.origin }} → {{ receiptTrip.destination }}</span>
+                        </div>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">จุดรับ</span>
+                            <span class="font-medium text-gray-900 text-right max-w-[60%]">{{ receiptTrip.pickupPoint || '-' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- คู่สัญญา -->
+                    <div class="space-y-2.5 py-3 border-b border-dashed border-gray-200">
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">ผู้โดยสาร</span>
+                            <span class="font-medium text-gray-900">{{ passengerName || 'ฉัน' }}</span>
+                        </div>
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">ผู้ขับ</span>
+                            <span class="font-medium text-gray-900">{{ receiptTrip.driver?.name || '-' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- ค่าโดยสาร -->
+                    <div class="space-y-2.5 py-3 border-b border-dashed border-gray-200">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">จำนวนที่นั่ง</span>
+                            <span class="font-medium text-gray-900">{{ receiptTrip.seats }} ที่นั่ง</span>
+                        </div>
+                        <div class="flex justify-between text-base">
+                            <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
+                            <span class="font-bold text-green-700">฿{{ receiptTrip.price?.toLocaleString() }}</span>
+                        </div>
+                    </div>
+
+                    <!-- วิธีชำระเงิน -->
+                    <div class="space-y-2 py-3">
+                        <div class="flex justify-between gap-2">
+                            <span class="text-gray-500 flex-shrink-0">ชำระโดย</span>
+                            <span class="font-medium text-gray-900">
+                                {{ receiptTrip.paymentMethod === 'CASH' ? 'เงินสด'
+                                 : receiptTrip.paymentMethod === 'BANK_TRANSFER' ? 'โอนผ่านธนาคาร'
+                                 : 'PromptPay / โอนเงิน' }}
+                            </span>
+                        </div>
+                        <div v-if="receiptTrip.paymentVerifiedAt" class="flex justify-between gap-2 text-xs text-gray-400">
+                            <span>ยืนยันเมื่อ</span>
+                            <span>{{ new Date(receiptTrip.paymentVerifiedAt).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 pb-5 flex-shrink-0 flex gap-3">
+                    <button @click="isReceiptModalVisible = false"
+                        class="flex-1 px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                        ปิด
+                    </button>
+                    <button @click="downloadReceipt"
+                        class="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 font-medium">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        ดาวน์โหลด
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -228,7 +395,10 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import ConfirmModal from '~/components/ConfirmModal.vue'
+import PaymentSlipModal from '~/components/PaymentSlipModal.vue' // Thongchai595-6
 import { useToast } from '~/composables/useToast'
+import { useAuth } from '~/composables/useAuth'
+import html2canvas from 'html2canvas'
 
 // Setup dayjs for Thai locale
 dayjs.locale('th')
@@ -236,11 +406,19 @@ dayjs.extend(buddhistEra)
 
 const { $api } = useNuxtApp()
 const { toast } = useToast()
+const { user } = useAuth()
+const passengerName = computed(() => {
+    const u = user.value
+    if (!u) return ''
+    return `${u.firstName || ''} ${u.lastName || ''}`.trim()
+})
 
 // --- State Management ---
 const activeTab = ref('pending')
 const selectedTripId = ref(null)
 const isLoading = ref(false)
+const isReceiptModalVisible = ref(false)
+const receiptTrip = ref(null)
 const mapContainer = ref(null)
 let map = null
 let currentPolyline = null
@@ -261,6 +439,7 @@ const GMAPS_CB = '__gmapsReady__'
 const tabs = [
     { status: 'pending', label: 'รอดำเนินการ' },
     { status: 'confirmed', label: 'ยืนยันแล้ว' },
+    { status: 'completed', label: 'เสร็จสิ้น' },
     { status: 'rejected', label: 'ปฏิเสธ' },
     { status: 'cancelled', label: 'ยกเลิก' },
     { status: 'all', label: 'ทั้งหมด' }
@@ -285,6 +464,11 @@ const isSubmittingCancel = ref(false)
 const selectedCancelReason = ref('')
 const cancelReasonError = ref('')
 const tripToCancel = ref(null)
+
+// ── Payment Slip Modal state (Thongchai595-6) ────────────────────────────────────
+const showPaymentModal    = ref(false)
+const selectedPaymentTrip = ref(null)
+const slipPreviewUrl      = ref(null)
 
 // --- Computed Properties ---
 const filteredTrips = computed(() => {
@@ -362,7 +546,9 @@ async function fetchMyTrips() {
 
             return {
                 id: b.id,
+                routeId: b.routeId,
                 status: String(b.status || '').toLowerCase(),
+                routeStatus: String(b.route.status || '').toUpperCase(),
                 origin: start?.name || `(${Number(start.lat).toFixed(2)}, ${Number(start.lng).toFixed(2)})`,
                 destination: end?.name || `(${Number(end.lat).toFixed(2)}, ${Number(end.lng).toFixed(2)})`,
                 originAddress: start?.address ? cleanAddr(start.address) : null,
@@ -390,7 +576,17 @@ async function fetchMyTrips() {
                     (typeof b.route.durationSeconds === 'number' ? `${Math.round(b.route.durationSeconds / 60)} นาที` : '-'),
                 distanceText:
                     (typeof b.route.distance === 'string' ? formatDistance(b.route.distance) : b.route.distance) ||
-                    (typeof b.route.distanceMeters === 'number' ? `${(b.route.distanceMeters / 1000).toFixed(1)} กม.` : '-')
+                    (typeof b.route.distanceMeters === 'number' ? `${(b.route.distanceMeters / 1000).toFixed(1)} กม.` : '-'),
+                // ── การชำระเงิน ──────────────────────────────────────────────────────────────────
+                paymentStatus:       b.payment?.status      || null,
+                paymentMethod:       b.payment?.method      || null,
+                paymentVerifiedAt:   b.payment?.verifiedAt  || null,
+                paymentRejectReason: b.payment?.rejectReason || null,
+                paymentSlipUrl:      b.payment?.slipUrl     || null,
+                driverPayment: {
+                    promptPayId:  b.route.driver.promptPayId  || null,
+                    bankAccounts: b.route.driver.bankAccounts || [],
+                },
             }
         })
 
@@ -674,6 +870,101 @@ async function submitCancel() {
     }
 }
 
+// ── Payment Slip Modal functions (Thongchai595-6) ────────────────────────────────
+function openPaymentModal(trip) {
+    selectedPaymentTrip.value = trip
+    showPaymentModal.value = true
+}
+
+function closePaymentModal() {
+    showPaymentModal.value = false
+    selectedPaymentTrip.value = null
+}
+
+function openReceipt(trip) {
+    receiptTrip.value = trip
+    isReceiptModalVisible.value = true
+}
+
+async function downloadReceipt() {
+    const t = receiptTrip.value
+    if (!t) return
+    const refNo = t.id?.slice(-8).toUpperCase()
+    const total = (t.price ?? 0).toLocaleString()
+    const verifiedAt = t.paymentVerifiedAt
+        ? new Date(t.paymentVerifiedAt).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '-'
+    const methodLabel = t.paymentMethod === 'CASH' ? 'เงินสด'
+        : t.paymentMethod === 'BANK_TRANSFER' ? 'โอนผ่านธนาคาร'
+        : 'PromptPay / โอนเงิน'
+
+    const s = {
+        wrap: 'font-family:sans-serif;font-size:14px;color:#111;background:#fff;width:400px;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12)',
+        hd: 'background:#16a34a;color:#fff;text-align:center;padding:22px 20px',
+        hdH: 'font-size:18px;font-weight:700;margin:0 0 4px',
+        hdP: 'font-size:11px;opacity:.75;margin:0',
+        bd: 'padding:16px 18px',
+        sec: 'border-bottom:1px dashed #d1d5db;padding-bottom:12px;margin-bottom:12px',
+        secLast: 'padding-bottom:0',
+        row: 'display:flex;justify-content:space-between;gap:12px;margin-bottom:7px',
+        rowLast: 'display:flex;justify-content:space-between;gap:12px;margin-bottom:0',
+        lbl: 'color:#6b7280;flex-shrink:0',
+        val: 'font-weight:500;text-align:right',
+        totalLbl: 'font-weight:600;color:#111;flex-shrink:0',
+        totalVal: 'font-size:15px;font-weight:700;color:#16a34a;text-align:right',
+    }
+
+    const el = document.createElement('div')
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px'
+    el.innerHTML = `
+    <div style="${s.wrap}">
+      <div style="${s.hd}">
+        <p style="${s.hdH}">ใบสำคัญรับเงิน</p>
+        <p style="${s.hdP}">เลขที่อ้างอิง: ${refNo}</p>
+      </div>
+      <div style="${s.bd}">
+        <div style="${s.sec}">
+          <div style="${s.row}"><span style="${s.lbl}">วันที่</span><span style="${s.val}">${t.date} · ${t.time}</span></div>
+          <div style="${s.row}"><span style="${s.lbl}">เส้นทาง</span><span style="${s.val}">${t.origin} → ${t.destination}</span></div>
+          <div style="${s.rowLast}"><span style="${s.lbl}">จุดรับ</span><span style="${s.val}">${t.pickupPoint || '-'}</span></div>
+        </div>
+        <div style="${s.sec}">
+          <div style="${s.row}"><span style="${s.lbl}">ผู้โดยสาร</span><span style="${s.val}">${passengerName.value || 'ผู้โดยสาร'}</span></div>
+          <div style="${s.rowLast}"><span style="${s.lbl}">ผู้ขับ</span><span style="${s.val}">${t.driver?.name || '-'}</span></div>
+        </div>
+        <div style="${s.sec}">
+          <div style="${s.row}"><span style="${s.lbl}">จำนวนที่นั่ง</span><span style="${s.val}">${t.seats} ที่นั่ง</span></div>
+          <div style="${s.rowLast}"><span style="${s.totalLbl}">รวมทั้งสิ้น</span><span style="${s.totalVal}">฿${total}</span></div>
+        </div>
+        <div style="${s.secLast}">
+          <div style="${s.row}"><span style="${s.lbl}">ชำระโดย</span><span style="${s.val}">${methodLabel}</span></div>
+          <div style="${s.rowLast}"><span style="${s.lbl}">ยืนยันเมื่อ</span><span style="${s.val}">${verifiedAt}</span></div>
+        </div>
+      </div>
+    </div>`
+
+    document.body.appendChild(el)
+    try {
+        const canvas = await html2canvas(/** @type {HTMLElement} */ (el.firstElementChild), {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+        })
+        const link = document.createElement('a')
+        link.download = `ใบเสร็จ-${refNo}.png`
+        link.href = canvas.toDataURL('image/png')
+        link.click()
+    } finally {
+        document.body.removeChild(el)
+    }
+}
+
+/** Refresh trip list ให้แสดง paymentStatus ใหม่หลังส่งสลิปสำเร็จ */
+async function onPaymentSubmitted() {
+    closePaymentModal()
+    await fetchMyTrips()
+}
+
 function formatDistance(input) {
     if (typeof input !== 'string') return input
     const parts = input.split('+')
@@ -825,6 +1116,11 @@ function initializeMap() {
     color: #065f46;
 }
 
+.status-completed {
+    background-color: #ede9fe;
+    color: #6d28d9;
+}
+
 .status-rejected {
     background-color: #fee2e2;
     color: #dc2626;
@@ -833,6 +1129,22 @@ function initializeMap() {
 .status-cancelled {
     background-color: #f3f4f6;
     color: #6b7280;
+}
+
+/* ── payment status badge styles (Thongchai595-6) ── */
+.status-paid {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+.status-pending-payment {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+.status-unpaid {
+    background-color: #fee2e2;
+    color: #dc2626;
 }
 
 @keyframes slide-in-from-top {

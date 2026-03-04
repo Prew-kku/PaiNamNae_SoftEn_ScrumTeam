@@ -257,6 +257,71 @@
                                 </div>
                             </section>
 
+                            <!-- การชำระเงิน -->
+                            <section v-if="booking?.payment">
+                                <h3 class="mb-3 text-sm font-semibold text-gray-700">การชำระเงิน</h3>
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">สถานะ</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50">
+                                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+                                                :class="paymentStatusBadge(booking.payment.status)">
+                                                {{ paymentStatusLabel(booking.payment.status) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">วิธีชำระเงิน</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ paymentMethodLabel(booking.payment.method) }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">จำนวนเงิน</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ booking.payment.amount != null ? `${booking.payment.amount.toLocaleString()} บาท` : '-' }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-3">
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">ส่งสลิปเมื่อ</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ formatDate(booking.payment.submittedAt, true) }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">ยืนยันเมื่อ</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ formatDate(booking.payment.verifiedAt, true) }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">ปฏิเสธเมื่อ</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ formatDate(booking.payment.rejectedAt, true) }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="booking.payment.rejectReason" class="mt-4">
+                                    <label class="block mb-1 text-xs font-medium text-gray-600">เหตุผลที่ปฏิเสธ</label>
+                                    <div class="w-full px-3 py-2.5 border border-red-200 rounded-md bg-red-50 text-red-800 text-sm">
+                                        {{ booking.payment.rejectReason }}
+                                    </div>
+                                </div>
+
+                                <div v-if="booking.payment.slipUrl" class="mt-4">
+                                    <label class="block mb-1 text-xs font-medium text-gray-600">สลิปการชำระเงิน</label>
+                                    <button @click="slipPreviewUrl = booking.payment.slipUrl"
+                                        class="inline-flex items-center gap-2 px-3 py-2 text-sm text-blue-700 border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors">
+                                        <i class="fa-regular fa-image"></i>
+                                        ดูสลิป
+                                    </button>
+                                </div>
+                            </section>
+
                             <!-- ระบบ -->
                             <section>
                                 <h3 class="mb-3 text-sm font-semibold text-gray-700">ระบบ</h3>
@@ -288,6 +353,21 @@
         <!-- Mobile Overlay -->
         <div id="overlay" class="fixed inset-0 z-40 hidden bg-black bg-opacity-50 lg:hidden"
             @click="closeMobileSidebar"></div>
+
+        <!-- Slip fullscreen preview -->
+        <div v-if="slipPreviewUrl" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/80"
+            @click="slipPreviewUrl = null">
+            <div class="relative">
+                <img :src="slipPreviewUrl" alt="สลิปการชำระเงิน"
+                    class="max-w-sm max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+                <button @click.stop="slipPreviewUrl = null"
+                    class="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-gray-900">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -312,8 +392,30 @@ useHead({
 const route = useRoute()
 const isLoading = ref(true)
 const loadError = ref('')
-const booking = ref(null)      // booking raw
-const routeData = ref(null)    // mapped route for UI (เหมือนไฟล์อ้างอิง)
+const booking = ref(null)
+const routeData = ref(null)
+const slipPreviewUrl = ref(null)
+
+function paymentStatusBadge(s) {
+    if (s === 'VERIFIED') return 'bg-green-100 text-green-700'
+    if (s === 'SUBMITTED') return 'bg-blue-100 text-blue-700'
+    if (s === 'PENDING') return 'bg-amber-100 text-amber-700'
+    if (s === 'REJECTED') return 'bg-red-100 text-red-700'
+    return 'bg-gray-100 text-gray-700'
+}
+function paymentStatusLabel(s) {
+    if (s === 'VERIFIED') return 'ชำระแล้ว'
+    if (s === 'SUBMITTED') return 'รอตรวจสลิป'
+    if (s === 'PENDING') return 'รอชำระ'
+    if (s === 'REJECTED') return 'สลิปไม่ถูกต้อง'
+    return s || '-'
+}
+function paymentMethodLabel(m) {
+    if (m === 'CASH') return 'เงินสด'
+    if (m === 'PROMPTPAY') return 'พร้อมเพย์'
+    if (m === 'BANK_TRANSFER') return 'โอนผ่านธนาคาร'
+    return m || '-'
+}
 
 const passengerName = computed(() => {
     const p = booking.value?.passenger

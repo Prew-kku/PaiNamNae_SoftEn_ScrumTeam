@@ -46,8 +46,18 @@
                                             <span class="status-badge" :class="{
                                                 'status-confirmed': route.status === 'available',
                                                 'status-pending': route.status === 'full',
+                                                'status-arrived': route.status === 'driver_arrived',
+                                                'status-in-transit': route.status === 'in_transit',
+                                                'status-completed': route.status === 'completed',
+                                                'status-cancelled': route.status === 'cancelled',
                                             }">
-                                                {{ route.status === 'available' ? 'เปิดรับผู้โดยสาร' : 'เต็ม' }}
+                                                {{ route.status === 'available' ? 'เปิดรับผู้โดยสาร'
+                                                    : route.status === 'full' ? 'เต็ม'
+                                                    : route.status === 'driver_arrived' ? 'ถึงจุดรับแล้ว'
+                                                    : route.status === 'in_transit' ? 'กำลังเดินทาง'
+                                                    : route.status === 'completed' ? 'เสร็จสิ้น'
+                                                    : route.status === 'cancelled' ? 'ยกเลิก'
+                                                    : route.status }}
                                             </span>
                                         </div>
                                         <p class="mt-1 text-sm text-gray-600">
@@ -163,8 +173,30 @@
                                 </div>
 
                                 <!-- ปุ่มขวาล่าง -->
-                                <div class="flex justify-end" :class="{ 'mt-4': selectedTripId !== route.id }">
-                                    <NuxtLink :to="`/myRoute/${route.id}/edit`"
+                                <div class="flex justify-end gap-3" :class="{ 'mt-4': selectedTripId !== route.id }">
+                                    <!-- ถึงแล้ว (ทุก active status) -->
+                                    <button
+                                        v-if="['available', 'full', 'driver_arrived', 'in_transit'].includes(route.status)"
+                                        @click.stop="openConfirmModal(route, 'complete')"
+                                        class="px-4 py-2 text-sm text-white transition duration-200 bg-green-600 rounded-md hover:bg-green-700">
+                                        ถึงที่หมายแล้ว
+                                    </button>
+                                    <!-- ยืนยัน / ประวัติการชำระเงิน (COMPLETED) -->
+                                    <button
+                                        v-else-if="route.status === 'completed'"
+                                        @click.stop="openPaymentModal(route)"
+                                        class="px-4 py-2 text-sm text-white transition duration-200 rounded-md flex items-center gap-2"
+                                        :class="route.allPaymentsVerified
+                                            ? 'bg-gray-500 hover:bg-gray-600'
+                                            : 'bg-blue-600 hover:bg-blue-700'">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 002 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        {{ route.allPaymentsVerified ? 'ประวัติการชำระเงิน' : 'ยืนยันการชำระเงิน' }}
+                                    </button>
+                                    <NuxtLink
+                                        v-if="['available', 'full'].includes(route.status)"
+                                        :to="`/myRoute/${route.id}/edit`"
                                         class="px-4 py-2 text-sm text-white transition duration-200 bg-blue-600 rounded-md hover:bg-blue-700"
                                         @click.stop>
                                         แก้ไขเส้นทาง
@@ -382,6 +414,15 @@
         <ConfirmModal :show="isModalVisible" :title="modalContent.title" :message="modalContent.message"
             :confirmText="modalContent.confirmText" :variant="modalContent.variant" @confirm="handleConfirmAction"
             @cancel="closeConfirmModal" />
+
+        <!-- Payment Verification Modal -->
+        <DriverPaymentModal
+            :show="isPaymentModalVisible"
+            :route="paymentModalRoute"
+            @close="isPaymentModalVisible = false"
+            @updated="onPaymentUpdated"
+        />
+
     </div>
 </template>
 
@@ -391,6 +432,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import ConfirmModal from '~/components/ConfirmModal.vue'
+import DriverPaymentModal from '~/components/DriverPaymentModal.vue'
 import { useToast } from '~/composables/useToast'
 
 dayjs.locale('th')
@@ -473,7 +515,7 @@ async function fetchMyRoutes() {
     try {
         const routes = await $api('/routes/me')
 
-        const allowedRouteStatuses = new Set(['AVAILABLE', 'FULL', 'IN_TRANSIT'])
+        const allowedRouteStatuses = new Set(['AVAILABLE', 'FULL', 'DRIVER_ARRIVED', 'IN_TRANSIT', 'COMPLETED'])
 
         const formatted = []
         const ownRoutes = []
@@ -557,9 +599,9 @@ async function fetchMyRoutes() {
                 })
             }
 
-            // เก็บ “เส้นทางของฉัน”
-            const confirmedBookings = (r.bookings || []).filter(
-                b => (b.status || '').toUpperCase() === 'CONFIRMED'
+            // เก็บ “เส้นทางของฉัน” — รวม CONFIRMED และ COMPLETED bookings
+            const activeBookings = (r.bookings || []).filter(
+                b => ['CONFIRMED', 'COMPLETED'].includes((b.status || '').toUpperCase())
             )
             ownRoutes.push({
                 id: r.id,
@@ -576,21 +618,29 @@ async function fetchMyRoutes() {
                 polyline: r.routePolyline || null,
                 stops,
                 stopsCoords,
+                driverName: `${r.driver?.firstName || ''} ${r.driver?.lastName || ''}`.trim() || 'คนขับ',
+                licensePlate: r.vehicle?.licensePlate || '-',
+                vehicleModel: r.vehicle?.vehicleModel || '-',
                 carDetails: (r.vehicle
                     ? [`${r.vehicle.vehicleModel} (${r.vehicle.vehicleType})`, ...(r.vehicle.amenities || [])]
                     : ['ไม่มีข้อมูลรถ']),
                 photos: r.vehicle?.photos || [],
                 conditions: r.conditions || '',
-                passengers: confirmedBookings.map(b => ({
+                allPaymentsVerified: activeBookings.length > 0 && activeBookings.every(b => b.payment?.status === 'VERIFIED'),
+                passengers: activeBookings.map((b) => ({
                     id: b.id,
                     seats: b.numberOfSeats || 0,
-                    status: 'confirmed',
+                    status: (b.status || '').toLowerCase(),
                     name: `${b.passenger?.firstName || ''} ${b.passenger?.lastName || ''}`.trim() || 'ผู้โดยสาร',
                     image: b.passenger?.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(b.passenger?.firstName || 'P')}&background=random&size=64`,
                     email: b.passenger?.email || '',
                     isVerified: !!b.passenger?.isVerified,
-                    rating: 4.5,
-                    reviews: Math.floor(Math.random() * 50) + 5,
+                    pickupLocation: b.pickupLocation?.name || b.pickupLocation?.address || '-',
+                    dropoffLocation: b.dropoffLocation?.name || b.dropoffLocation?.address || '-',
+                    // payment fields จะ load จาก API เมื่อเปิด modal
+                    paymentMethod: null,
+                    paymentStatus: b.payment?.status || 'PENDING',
+                    paymentSlipUrl: null,
                 })),
                 durationText: (typeof r.duration === 'string' ? formatDuration(r.duration) : r.duration) || (r.durationSeconds ? `${Math.round(r.durationSeconds / 60)} นาที` : '-'),
                 distanceText: (typeof r.distance === 'string' ? formatDistance(r.distance) : r.distance) || (r.distanceMeters ? `${(r.distanceMeters / 1000).toFixed(1)} กม.` : '-'),
@@ -756,6 +806,26 @@ const isModalVisible = ref(false)
 const tripToAction = ref(null)
 const modalContent = ref({ title: '', message: '', confirmText: '', action: null, variant: 'danger' })
 
+// --- Payment verification modal state ---
+const isPaymentModalVisible = ref(false)
+const paymentModalRoute = ref(null)
+
+const openPaymentModal = (route) => {
+    paymentModalRoute.value = route
+    isPaymentModalVisible.value = true
+}
+
+// รับ event จาก DriverPaymentModal เมื่อ verify/reject สำเร็จ
+// ถ้า allVerified=true → อัปเดต route ในรายการให้แสดง "ประวัติการชำระเงิน"
+const onPaymentUpdated = ({ allVerified } = {}) => {
+    if (allVerified && paymentModalRoute.value?.id) {
+        const routeId = paymentModalRoute.value.id
+        myRoutes.value = myRoutes.value.map(r =>
+            r.id === routeId ? { ...r, allPaymentsVerified: true } : r
+        )
+    }
+}
+
 const openConfirmModal = (trip, action) => {
     tripToAction.value = trip
     if (action === 'confirm') {
@@ -782,6 +852,22 @@ const openConfirmModal = (trip, action) => {
             action: 'delete',
             variant: 'danger',
         }
+    } else if (action === 'arrive') {
+        modalContent.value = {
+            title: 'ยืนยันการถึงจุดรับผู้โดยสาร',
+            message: `ยืนยันว่าคุณมาถึงจุดรับผู้โดยสารในเส้นทาง "${trip.origin} → ${trip.destination}" แล้วใช่หรือไม่?`,
+            confirmText: 'ใช่ มาถึงแล้ว',
+            action: 'arrive',
+            variant: 'primary',
+        }
+    } else if (action === 'complete') {
+        modalContent.value = {
+            title: 'สิ้นสุดการเดินทาง',
+            message: `ยืนยันว่าเดินทางเสร็จสิ้นในเส้นทาง "${trip.origin} → ${trip.destination}" แล้วใช่หรือไม่?\n\nระบบจะสร้างรายการชำระเงินให้ผู้โดยสารทุกคน`,
+            confirmText: 'ยืนยัน สิ้นสุดการเดินทาง',
+            action: 'complete',
+            variant: 'primary',
+        }
     }
     isModalVisible.value = true
 }
@@ -805,6 +891,12 @@ const handleConfirmAction = async () => {
         } else if (action === 'delete') {
             await $api(`/bookings/${bookingId}`, { method: 'DELETE' })
             toast.success('ลบรายการสำเร็จ', 'ลบคำขอออกจากรายการแล้ว')
+        } else if (action === 'arrive') {
+            await $api(`/routes/${bookingId}/arrive`, { method: 'PATCH' })
+            toast.success('บันทึกสำเร็จ', 'ผู้โดยสารได้รับแจ้งว่าคุณมาถึงแล้ว')
+        } else if (action === 'complete') {
+            await $api(`/routes/${bookingId}/complete`, { method: 'PATCH' })
+            toast.success('เดินทางเสร็จสิ้น', 'ระบบสร้างรายการชำระเงินให้ผู้โดยสารแล้ว')
         }
         closeConfirmModal()
         await fetchMyRoutes()
@@ -866,7 +958,7 @@ function formatDuration(input) {
 // --- Lifecycle ---
 useHead({
     title: 'คำขอจองเส้นทางของฉัน - ไปนำแหน่',
-    script: process.client && !window.google?.maps ? [{
+    script: import.meta.client && !window.google?.maps ? [{
         key: 'gmaps',
         src: `https://maps.googleapis.com/maps/api/js?key=${useRuntimeConfig().public.googleMapsApiKey}&libraries=places,geometry&callback=${GMAPS_CB}`,
         async: true,
@@ -990,6 +1082,22 @@ watch(activeTab, () => {
 .status-cancelled {
     background-color: #f3f4f6;
     color: #6b7280;
+}
+
+.status-in-transit {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-arrived {
+    background-color: #fef9c3;
+    color: #a16207;
+    border: 1px solid #fde047;
+}
+
+.status-completed {
+    background-color: #dcfce7;
+    color: #15803d;
 }
 
 @keyframes slide-in-from-top {

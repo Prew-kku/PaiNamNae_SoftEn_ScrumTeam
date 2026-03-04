@@ -403,8 +403,8 @@ function requestTypeLabel(type) {
 function ownerName(log) {
     const user = log?.request?.user
     if (!user) return '-'
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
-    return fullName || user.username || user.email || user.id || '-'
+    const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
+    return fullName || user.username || user?.email || user.id || '-'
 }
 
 function actorName(log) {

@@ -1,0 +1,59 @@
+{
+  "info": {
+    "_postman_id": "9758fd51-d497-445a-aa7c-55d297981138",
+    "name": "90 day",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "43957767",
+    "_collection_link": "https://go.postman.co/collection/43957767-9758fd51-d497-445a-aa7c-55d297981138?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "การจำลองข้ามเวลา 90 วัน",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/test/cron/fast-forward/cmm9fkg6p0005wljdzw82zj8y",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "test",
+            "cron",
+            "fast-forward",
+            "cmm9fkg6p0005wljdzw82zj8y"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "กระตุ้น Cron Job",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/test/cron/deletion",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "test",
+            "cron",
+            "deletion"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

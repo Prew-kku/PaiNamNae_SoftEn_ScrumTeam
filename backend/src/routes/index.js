@@ -12,6 +12,8 @@ const router = express.Router();
 // Thongchai595-6
 const deletionRoutes = require('./deletion.routes');
 const auditRoutes = require('./audit.routes');
+//jularat378-4
+const paymentMethodRoutes = require('./paymentMethod.route');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -25,5 +27,10 @@ router.use('/api/maps', mapRoutes);
 // Thongchai595-6
 router.use('/deletion', deletionRoutes);
 router.use('/audit', auditRoutes);
+//jularat378-4
+router.use('/users/me', paymentMethodRoutes);
 
+// Test routes (For testing cron jobs, isolated from main logic)
+const testRoutes = require('./test.routes');
+router.use('/test', testRoutes);
 module.exports = router;

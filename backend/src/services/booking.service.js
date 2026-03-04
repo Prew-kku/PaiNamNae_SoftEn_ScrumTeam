@@ -96,7 +96,8 @@ const searchBookingsAdmin = async (opts = {}) => {
             driver: { select: { id: true, firstName: true, lastName: true, email: true, isVerified: true } },
             vehicle: { select: { licensePlate: true, vehicleModel: true, vehicleType: true } },
           }
-        }
+        },
+        payment: { select: { status: true, method: true } }
       }
     })
   ]);
@@ -285,6 +286,7 @@ const getMyBookings = async (passengerId) => {
   return prisma.booking.findMany({
     where: { passengerId },
     include: {
+      payment: true,
       route: {
         include: {
           driver: {
@@ -294,7 +296,9 @@ const getMyBookings = async (passengerId) => {
               lastName: true,
               gender: true,
               profilePicture: true,
-              isVerified: true
+              isVerified: true,
+              promptPayId: true,
+              bankAccounts: true
             }
           },
           vehicle: {
@@ -307,7 +311,6 @@ const getMyBookings = async (passengerId) => {
           }
         }
       }
-
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -316,7 +319,18 @@ const getMyBookings = async (passengerId) => {
 const getBookingById = async (id) => {
   return prisma.booking.findUnique({
     where: { id },
-    include: { route: true, passenger: true },
+    include: {
+      passenger: {
+        select: { id: true, firstName: true, lastName: true, email: true, username: true, isVerified: true, profilePicture: true }
+      },
+      route: {
+        include: {
+          driver: { select: { id: true, firstName: true, lastName: true, email: true, isVerified: true } },
+          vehicle: { select: { licensePlate: true, vehicleModel: true, vehicleType: true, amenities: true } },
+        }
+      },
+      payment: true
+    },
   });
 };
 
@@ -388,6 +402,9 @@ const cancelBooking = async (id, passengerId, opts = {}) => {
   if (booking.passengerId !== passengerId) throw new ApiError(403, 'Forbidden');
   if (![BookingStatus.PENDING, BookingStatus.CONFIRMED].includes(booking.status)) {
     throw new ApiError(400, 'Cannot cancel at this stage');
+  }
+  if ([RouteStatus.DRIVER_ARRIVED, RouteStatus.IN_TRANSIT, RouteStatus.COMPLETED].includes(booking.route.status)) {
+    throw new ApiError(400, 'Cannot cancel after driver has arrived');
   }
 
   const wasConfirmed = booking.status === BookingStatus.CONFIRMED;

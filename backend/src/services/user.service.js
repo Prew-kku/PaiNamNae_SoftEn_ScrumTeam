@@ -36,6 +36,12 @@ const searchUsers = async (opts = {}) => {
                 { phoneNumber: { contains: q, mode: 'insensitive' } },
             ]
         } : {}),
+        NOT: {
+            AND: [
+                { firstName: "Deleted" },
+                { lastName: "User" }
+            ]
+        }
     };
 
     const skip = (page - 1) * limit;
@@ -91,7 +97,7 @@ const getAllUsers = async () => {
     /*
     const safeUsers = users.map(user => ({
       id: user.id,
-      email: user.email,
+      email: user?.email,
       username: user.username,
       // ... เอาฟิลด์อื่นๆ ที่ต้องการมาใส่ ...
     }));
