@@ -36,6 +36,12 @@ const searchUsers = async (opts = {}) => {
                 { phoneNumber: { contains: q, mode: 'insensitive' } },
             ]
         } : {}),
+        NOT: {
+            AND: [
+                { firstName: "Deleted" },
+                { lastName: "User" }
+            ]
+        }
     };
 
     const skip = (page - 1) * limit;

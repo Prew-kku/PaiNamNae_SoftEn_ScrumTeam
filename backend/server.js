@@ -17,7 +17,7 @@ const ApiError = require('./src/utils/ApiError')
 const { metricsMiddleware } = require('./src/middlewares/metrics');
 const ensureAdmin = require('./src/bootstrap/ensureAdmin');
 
-const initCronJobs = require('./src/utils/cronJobs');
+const { initCronJobs } = require('./src/utils/cronJobs');
 require('./src/cron/deletion.cron'); // Initialize Deletion Cron Job
 
 const app = express();

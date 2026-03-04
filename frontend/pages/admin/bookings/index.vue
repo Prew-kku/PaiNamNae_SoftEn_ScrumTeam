@@ -59,6 +59,7 @@
                                 <option value="">ทั้งหมด</option>
                                 <option value="PENDING">PENDING</option>
                                 <option value="CONFIRMED">CONFIRMED</option>
+                                <option value="COMPLETED">COMPLETED</option>
                                 <option value="REJECTED">REJECTED</option>
                                 <option value="CANCELLED">CANCELLED</option>
                             </select>
@@ -290,7 +291,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { useCookie } from '#app'
+import { useCookie, useRuntimeConfig } from '#app'
 import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -335,6 +336,7 @@ const filters = reactive({
 function statusBadge(s) {
     if (s === 'CONFIRMED') return 'bg-green-100 text-green-700'
     if (s === 'PENDING') return 'bg-amber-100 text-amber-700'
+    if (s === 'COMPLETED') return 'bg-blue-100 text-blue-700'
     if (s === 'REJECTED') return 'bg-red-100 text-red-700'
     if (s === 'CANCELLED') return 'bg-gray-200 text-gray-700'
     return 'bg-gray-100 text-gray-700'
@@ -342,6 +344,7 @@ function statusBadge(s) {
 function statusIcon(s) {
     if (s === 'CONFIRMED') return 'fa-circle-check'
     if (s === 'PENDING') return 'fa-hourglass-half'
+    if (s === 'COMPLETED') return 'fa-flag-checkered'
     if (s === 'REJECTED') return 'fa-circle-xmark'
     if (s === 'CANCELLED') return 'fa-ban'
     return 'fa-circle'
@@ -470,8 +473,8 @@ async function fetchBookings() {
     loadError.value = ''
     try {
         const token = useCookie('token').value || (process.client ? localStorage.getItem('token') : '')
-        const res = await fetch('http://localhost:3000/api/bookings/admin', {//เพื่อการพัฒนาใช้ localhost ก่อนนะครับ
-        //const res = await fetch('https://painamnaesoftenscrumteam-production.up.railway.app/api/bookings/admin', {//เมื่อจะ deploy ค่อยเปลี่ยนเป็น URL จริงครับ
+        const config = useRuntimeConfig()
+        const res = await fetch(`${config.public.apiBase}/bookings/admin`, {
             headers: {
                 Accept: 'application/json',
                 ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -513,11 +516,7 @@ function clearFilters() {
 }
 
 function onViewBooking(b) {
-    navigateTo(`/admin/bookings/${b.id}/edit`).catch(() => {
-        toast.info('ยังไม่รองรับ', `ดูรายละเอียด Booking: ${b.id}`)
-    })
-    // ไว้เชื่อมหน้ารายละเอียดภายหลังหากต้องการ
-    // toast.info('ยังไม่รองรับ', `ดูรายละเอียด Booking: ${b.id}`)
+    navigateTo(`/admin/bookings/${b.id}`)
 }
 function onEditBooking(b) {
     navigateTo(`/admin/bookings/${b.id}/edit`).catch(() => {

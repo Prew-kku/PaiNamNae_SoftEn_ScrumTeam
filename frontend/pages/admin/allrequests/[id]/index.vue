@@ -336,7 +336,7 @@ async function fetchRequest() {
                     reason: res.reason,
                     description: null,
                     backupData: res.backupData || {},
-                    adminNote: rejectionInfo.adminReason || latestReviewAudit?.reason || null,
+                    adminNote: rejectionInfo.adminReason || (latestReviewAudit?.status === 'REJECTED' ? latestReviewAudit?.reason : null),
                     reviewedAt: latestReviewAudit?.eventTime || res.approvedAt || null,
                 }
             }

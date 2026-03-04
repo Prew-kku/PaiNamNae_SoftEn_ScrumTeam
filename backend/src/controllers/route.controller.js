@@ -113,7 +113,7 @@ const createRoute = asyncHandler(async (req, res) => {
       }))
     );
 
-    // เก็บ waypoints ที่ “ร้องขอ” และผลลำดับที่ Google จัดให้
+    // เก็บ waypoints ที่ "ร้องขอ" และผลลำดับที่ Google จัดให้
     payload.waypoints = {
       requested: routeFields.waypoints || [],
       optimizedOrder: primary.waypoint_order || [],
@@ -476,6 +476,18 @@ const cancelRoute = asyncHandler(async (req, res) => {
   });
 });
 
+const arriveRoute = asyncHandler(async (req, res) => {
+  const driverId = req.user.sub;
+  const result = await routeService.arriveRoute(req.params.id, driverId);
+  res.status(200).json({ success: true, message: 'Driver marked as arrived', data: result });
+});
+
+const completeRoute = asyncHandler(async (req, res) => {
+  const driverId = req.user.sub;
+  const result = await routeService.completeRoute(req.params.id, driverId);
+  res.status(200).json({ success: true, message: 'Trip completed', data: result });
+});
+
 module.exports = {
   getAllRoutes,
   listRoutes,
@@ -490,4 +502,6 @@ module.exports = {
   adminDeleteRoute,
   adminGetRoutesByDriver,
   cancelRoute,
+  arriveRoute,
+  completeRoute,
 };
