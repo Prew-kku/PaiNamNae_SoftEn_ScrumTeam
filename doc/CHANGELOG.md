@@ -90,6 +90,8 @@
 ### pichamon395-4
 - เพิ่ม `USERMANUAL.md` (PBI-16, PBI-bonus), `CHANGELOG.md` และอัปเดต API Testing collection (85/85 assertions ผ่าน)
 - แก้ bug modal ไม่ปิดหลัง admin ปฏิเสธคำขอลบบัญชีใน `admin/allrequests/index.vue` — เพิ่ม loading state และข้อความ "กำลังดำเนินการ..."
+- เพิ่ม Postman collection สำหรับ PBI-bonus Payment API (28 test cases, 43 assertions, 0 failed) ใน `test/Product_Backlog_Items-bonus/api/`
+- เพิ่มเอกสาร API testing filled (TC-API-BONUS-01 ถึง 28) และ Newman HTML report ใน `test/Product_Backlog_Items-bonus/api/`
 
 ### Kittikorn587-5
 - ทดสอบ 90-day time machine API บน Production สำเร็จ
