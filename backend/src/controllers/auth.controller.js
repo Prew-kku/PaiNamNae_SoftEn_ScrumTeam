@@ -5,12 +5,15 @@ const ApiError = require('../utils/ApiError');
 
 const login = asyncHandler(async (req, res) => {
     const { email, username, password } = req.body;
+    console.log("🔥 LOGIN ATTEMPT:", { email, username, passwordProvidedLength: password?.length });
 
     let user;
     if (email) {
         user = await userService.getUserByEmail(email);
+        console.log("🔍 Found by Email:", user ? "YES" : "NO");
     } else if (username) {
         user = await userService.getUserByUsername(username);
+        console.log("🔍 Found by Username:", user ? "YES" : "NO");
     }
 
     if (user && !user.isActive && !user.deletionPending) {
@@ -24,7 +27,7 @@ const login = asyncHandler(async (req, res) => {
 
     const token = signToken({ sub: user.id, role: user.role });
     const {
-        password:_,
+        password: _,
         gender,
         phoneNumber,
         otpCode,
@@ -37,8 +40,8 @@ const login = asyncHandler(async (req, res) => {
         lastLogin,
         createdAt,
         updatedAt,
-        username:__,
-        email:___,
+        username: __,
+        email: ___,
         ...safeUser
     } = user;
 
