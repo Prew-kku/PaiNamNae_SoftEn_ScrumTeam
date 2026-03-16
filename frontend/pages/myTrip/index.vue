@@ -167,8 +167,18 @@
                                     <!-- COMPLETED: ชำระเงิน -->
                                     <template v-else-if="trip.status === 'completed'">
                                         <div class="flex flex-col items-end gap-2">
-                                            <!-- VERIFIED: ดูใบเสร็จ -->
-                                            <button v-if="trip.paymentStatus === 'VERIFIED'"
+                                            <!-- VERIFIED: ถูกจ่ายแทน -->
+                                            <div v-if="trip.paymentStatus === 'VERIFIED' && trip.paidByName"
+                                                class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-300 rounded-lg shadow-sm">
+                                                <div class="flex items-center justify-center w-7 h-7 bg-blue-100 rounded-full shrink-0">
+                                                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                    </svg>
+                                                </div>
+                                                <p>{{ trip.paidByName }} ได้จ่ายให้คุณแล้ว</p>
+                                            </div>
+                                            <!-- VERIFIED: ดูใบเสร็จ (จ่ายเอง) -->
+                                            <button v-else-if="trip.paymentStatus === 'VERIFIED'"
                                                 @click.stop="openReceipt(trip)"
                                                 class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border rounded-md hover:bg-blue-700 transition-colors">
                                                 ดูใบเสร็จ
@@ -297,95 +307,50 @@
             </div>
         </div>
 
+        <!-- กรณี: ตัวเองไม่มีที่อยู่ -->
+        <ConfirmModal
+            :show="isReceiptModalVisible && !!receiptTrip && !user?.address"
+            title="กรุณากรอกที่อยู่ของคุณก่อน"
+            message="ต้องมีข้อมูลที่อยู่ของคุณเพื่อออกใบเสร็จรับเงิน กรุณาไปกรอกที่หน้าโปรไฟล์"
+            confirm-text="ไปที่โปรไฟล์"
+            cancel-text="ปิด"
+            variant="primary"
+            @confirm="navigateTo('/profile')"
+            @cancel="isReceiptModalVisible = false"
+        />
+
+        <!-- กรณี: คนขับไม่มีที่อยู่ -->
+        <ConfirmModal
+            :show="isReceiptModalVisible && !!receiptTrip && !!user?.address && !receiptTrip?.driver?.address"
+            title="คนขับยังไม่ได้กรอกที่อยู่"
+            message="ผู้ให้บริการ (คนขับ) ยังไม่ได้กรอกข้อมูลที่อยู่ กรุณาแจ้งให้คนขับไปกรอกที่อยู่ที่หน้าโปรไฟล์ก่อน"
+            confirm-text="รับทราบ"
+            cancel-text="ปิด"
+            variant="primary"
+            @confirm="isReceiptModalVisible = false"
+            @cancel="isReceiptModalVisible = false"
+        />
+
         <!-- Receipt Modal (passenger) -->
-        <div v-if="isReceiptModalVisible && receiptTrip"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
-            @click.self="isReceiptModalVisible = false">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] flex flex-col">
-                <!-- Header -->
-                <div class="px-6 py-5 text-white text-center flex-shrink-0 bg-green-600">
-                    <svg class="w-10 h-10 mx-auto mb-2 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 class="text-lg font-bold">ใบสำคัญรับเงิน</h3>
-                    <p class="text-xs opacity-75 mt-0.5">เลขที่อ้างอิง: {{ receiptTrip.id?.slice(-8).toUpperCase() }}</p>
-                </div>
-
-                <!-- Body -->
-                <div class="px-6 py-4 text-sm overflow-y-auto flex-1 space-y-0">
-                    <!-- ข้อมูลการเดินทาง -->
-                    <div class="space-y-2.5 pb-3 border-b border-dashed border-gray-200">
-                        <div class="flex justify-between gap-2">
-                            <span class="text-gray-500 flex-shrink-0">วันที่</span>
-                            <span class="font-medium text-gray-900 text-right">{{ receiptTrip.date }} · {{ receiptTrip.time }}</span>
-                        </div>
-                        <div class="flex justify-between gap-2">
-                            <span class="text-gray-500 flex-shrink-0">เส้นทาง</span>
-                            <span class="font-medium text-gray-900 text-right max-w-[60%]">{{ receiptTrip.origin }} → {{ receiptTrip.destination }}</span>
-                        </div>
-                        <div class="flex justify-between gap-2">
-                            <span class="text-gray-500 flex-shrink-0">จุดรับ</span>
-                            <span class="font-medium text-gray-900 text-right max-w-[60%]">{{ receiptTrip.pickupPoint || '-' }}</span>
-                        </div>
-                    </div>
-
-                    <!-- คู่สัญญา -->
-                    <div class="space-y-2.5 py-3 border-b border-dashed border-gray-200">
-                        <div class="flex justify-between gap-2">
-                            <span class="text-gray-500 flex-shrink-0">ผู้โดยสาร</span>
-                            <span class="font-medium text-gray-900">{{ passengerName || 'ฉัน' }}</span>
-                        </div>
-                        <div class="flex justify-between gap-2">
-                            <span class="text-gray-500 flex-shrink-0">ผู้ขับ</span>
-                            <span class="font-medium text-gray-900">{{ receiptTrip.driver?.name || '-' }}</span>
-                        </div>
-                    </div>
-
-                    <!-- ค่าโดยสาร -->
-                    <div class="space-y-2.5 py-3 border-b border-dashed border-gray-200">
-                        <div class="flex justify-between">
-                            <span class="text-gray-500">จำนวนที่นั่ง</span>
-                            <span class="font-medium text-gray-900">{{ receiptTrip.seats }} ที่นั่ง</span>
-                        </div>
-                        <div class="flex justify-between text-base">
-                            <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
-                            <span class="font-bold text-green-700">฿{{ receiptTrip.price?.toLocaleString() }}</span>
-                        </div>
-                    </div>
-
-                    <!-- วิธีชำระเงิน -->
-                    <div class="space-y-2 py-3">
-                        <div class="flex justify-between gap-2">
-                            <span class="text-gray-500 flex-shrink-0">ชำระโดย</span>
-                            <span class="font-medium text-gray-900">
-                                {{ receiptTrip.paymentMethod === 'CASH' ? 'เงินสด'
-                                 : receiptTrip.paymentMethod === 'BANK_TRANSFER' ? 'โอนผ่านธนาคาร'
-                                 : 'PromptPay / โอนเงิน' }}
-                            </span>
-                        </div>
-                        <div v-if="receiptTrip.paymentVerifiedAt" class="flex justify-between gap-2 text-xs text-gray-400">
-                            <span>ยืนยันเมื่อ</span>
-                            <span>{{ new Date(receiptTrip.paymentVerifiedAt).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="px-6 pb-5 flex-shrink-0 flex gap-3">
-                    <button @click="isReceiptModalVisible = false"
-                        class="flex-1 px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
-                        ปิด
-                    </button>
-                    <button @click="downloadReceipt"
-                        class="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 font-medium">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        ดาวน์โหลด
-                    </button>
-                </div>
-            </div>
-        </div>
+        <ReceiptModal
+            :show="isReceiptModalVisible && !!receiptTrip && !!user?.address && !!receiptTrip?.driver?.address"
+            :ref-no="receiptTrip?.id?.slice(-8).toUpperCase() ?? ''"
+            :date="receiptTrip?.date ?? ''"
+            :provider="{ name: receiptTrip?.driver?.name ?? '-', nationalIdNumber: receiptTrip?.driver?.nationalIdNumber ?? '', address: receiptTrip?.driver?.address ?? '' }"
+            :customer="{ name: passengerName || 'ผู้โดยสาร', nationalIdNumber: user?.nationalIdNumber ?? '', address: user?.address ?? '' }"
+            :origin="receiptTrip?.origin ?? ''"
+            :destination="receiptTrip?.destination ?? ''"
+            :pickup-location="receiptTrip?.pickupPoint ?? ''"
+            :dropoff-location="receiptTrip?.dropoffPoint ?? ''"
+            :seats="(receiptTrip?.seats ?? 1) + (receiptTrip?.paidForFriends ?? []).reduce((s, f) => s + (f.seats || 1), 0)"
+            :price-per-seat="receiptTrip?.price ? (receiptTrip.price / (receiptTrip.seats || 1)) : 0"
+            :total="(receiptTrip?.price ?? 0) + (receiptTrip?.paidForFriends ?? []).reduce((s, f) => s + (f.price || 0), 0)"
+            :group-paid-friends="receiptTrip?.paidForFriends ?? []"
+            :payment-method="receiptTrip?.paymentMethod ?? ''"
+            :payment-account="receiptTrip?.driverPayment ?? {}"
+            :verified-at="receiptTrip?.paymentVerifiedAt ? new Date(receiptTrip.paymentVerifiedAt).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''"
+            @close="isReceiptModalVisible = false"
+        />
     </div>
 </template>
 
@@ -398,7 +363,6 @@ import ConfirmModal from '~/components/ConfirmModal.vue'
 import MultiStepPaymentModal from '~/components/MultiStepPaymentModal.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
-import html2canvas from 'html2canvas'
 
 // Setup dayjs for Thai locale
 dayjs.locale('th')
@@ -500,6 +464,8 @@ async function fetchMyTrips() {
                 image:
                     b.route.driver.profilePicture ||
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(b.route.driver.firstName || 'U')}&background=random&size=64`,
+                nationalIdNumber: b.route.driver.nationalIdNumber || null,
+                address: b.route.driver.address || null,
                 rating: 4.5,
                 reviews: Math.floor(Math.random() * 50) + 5
             }
@@ -556,6 +522,9 @@ async function fetchMyTrips() {
                 originHasName: !!start?.name,
                 destinationHasName: !!end?.name,
                 pickupPoint: b.pickupLocation?.name || '-',
+                dropoffPoint: b.dropoffLocation?.name || '-',
+                paidForFriends: b.paidForFriends || [],
+                paidByName: b.paidByName || null,
                 date: dayjs(b.route.departureTime).format('D MMMM BBBB'),
                 time: dayjs(b.route.departureTime).format('HH:mm น.'),
                 price: (b.route.pricePerSeat || 0) * (b.numberOfSeats || 1),
@@ -886,78 +855,6 @@ function openReceipt(trip) {
     isReceiptModalVisible.value = true
 }
 
-async function downloadReceipt() {
-    const t = receiptTrip.value
-    if (!t) return
-    const refNo = t.id?.slice(-8).toUpperCase()
-    const total = (t.price ?? 0).toLocaleString()
-    const verifiedAt = t.paymentVerifiedAt
-        ? new Date(t.paymentVerifiedAt).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-        : '-'
-    const methodLabel = t.paymentMethod === 'CASH' ? 'เงินสด'
-        : t.paymentMethod === 'BANK_TRANSFER' ? 'โอนผ่านธนาคาร'
-        : 'PromptPay / โอนเงิน'
-
-    const s = {
-        wrap: 'font-family:sans-serif;font-size:14px;color:#111;background:#fff;width:400px;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12)',
-        hd: 'background:#16a34a;color:#fff;text-align:center;padding:22px 20px',
-        hdH: 'font-size:18px;font-weight:700;margin:0 0 4px',
-        hdP: 'font-size:11px;opacity:.75;margin:0',
-        bd: 'padding:16px 18px',
-        sec: 'border-bottom:1px dashed #d1d5db;padding-bottom:12px;margin-bottom:12px',
-        secLast: 'padding-bottom:0',
-        row: 'display:flex;justify-content:space-between;gap:12px;margin-bottom:7px',
-        rowLast: 'display:flex;justify-content:space-between;gap:12px;margin-bottom:0',
-        lbl: 'color:#6b7280;flex-shrink:0',
-        val: 'font-weight:500;text-align:right',
-        totalLbl: 'font-weight:600;color:#111;flex-shrink:0',
-        totalVal: 'font-size:15px;font-weight:700;color:#16a34a;text-align:right',
-    }
-
-    const el = document.createElement('div')
-    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px'
-    el.innerHTML = `
-    <div style="${s.wrap}">
-      <div style="${s.hd}">
-        <p style="${s.hdH}">ใบสำคัญรับเงิน</p>
-        <p style="${s.hdP}">เลขที่อ้างอิง: ${refNo}</p>
-      </div>
-      <div style="${s.bd}">
-        <div style="${s.sec}">
-          <div style="${s.row}"><span style="${s.lbl}">วันที่</span><span style="${s.val}">${t.date} · ${t.time}</span></div>
-          <div style="${s.row}"><span style="${s.lbl}">เส้นทาง</span><span style="${s.val}">${t.origin} → ${t.destination}</span></div>
-          <div style="${s.rowLast}"><span style="${s.lbl}">จุดรับ</span><span style="${s.val}">${t.pickupPoint || '-'}</span></div>
-        </div>
-        <div style="${s.sec}">
-          <div style="${s.row}"><span style="${s.lbl}">ผู้โดยสาร</span><span style="${s.val}">${passengerName.value || 'ผู้โดยสาร'}</span></div>
-          <div style="${s.rowLast}"><span style="${s.lbl}">ผู้ขับ</span><span style="${s.val}">${t.driver?.name || '-'}</span></div>
-        </div>
-        <div style="${s.sec}">
-          <div style="${s.row}"><span style="${s.lbl}">จำนวนที่นั่ง</span><span style="${s.val}">${t.seats} ที่นั่ง</span></div>
-          <div style="${s.rowLast}"><span style="${s.totalLbl}">รวมทั้งสิ้น</span><span style="${s.totalVal}">฿${total}</span></div>
-        </div>
-        <div style="${s.secLast}">
-          <div style="${s.row}"><span style="${s.lbl}">ชำระโดย</span><span style="${s.val}">${methodLabel}</span></div>
-          <div style="${s.rowLast}"><span style="${s.lbl}">ยืนยันเมื่อ</span><span style="${s.val}">${verifiedAt}</span></div>
-        </div>
-      </div>
-    </div>`
-
-    document.body.appendChild(el)
-    try {
-        const canvas = await html2canvas(/** @type {HTMLElement} */ (el.firstElementChild), {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-        })
-        const link = document.createElement('a')
-        link.download = `ใบเสร็จ-${refNo}.png`
-        link.href = canvas.toDataURL('image/png')
-        link.click()
-    } finally {
-        document.body.removeChild(el)
-    }
-}
 
 /** Refresh trip list ให้แสดง paymentStatus ใหม่หลังส่งสลิปสำเร็จ */
 async function onPaymentSubmitted() {

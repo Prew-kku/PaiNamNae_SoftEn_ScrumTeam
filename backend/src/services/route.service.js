@@ -12,7 +12,8 @@ const baseInclude = {
       lastName: true,
       gender: true,
       profilePicture: true,
-      isVerified: true
+      isVerified: true,
+      nationalIdNumber: true
     }
   },
   vehicle: {
@@ -275,13 +276,36 @@ const getMyRoutes = async (driverId) => {
               lastName: true,
               profilePicture: true,
               isVerified: true,
-              email: true
+              email: true,
+              nationalIdNumber: true,
+              address: true
             }
           },
-          payment: { select: { status: true } }
+          payment: { select: { status: true, paidBy: true } }
         }
       },
-      ...baseInclude
+      ...baseInclude,
+      driver: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          gender: true,
+          profilePicture: true,
+          isVerified: true,
+          nationalIdNumber: true,
+          promptPayId: true,
+          bankAccounts: {
+            select: {
+              id: true,
+              bankCode: true,
+              customBankName: true,
+              accountNumber: true,
+              accountName: true,
+            }
+          }
+        }
+      }
     },
 
     orderBy: { createdAt: 'desc' },

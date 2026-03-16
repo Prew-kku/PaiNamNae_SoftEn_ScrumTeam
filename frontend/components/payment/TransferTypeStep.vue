@@ -11,8 +11,8 @@
           ? 'border-blue-500 bg-blue-50 text-blue-700'
           : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
       >
-        <div class="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-          <span class="text-white font-bold text-xs uppercase">Prompt<br>Pay</span>
+        <div class="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden p-1">
+          <img src="/banks/promptpay.png" alt="PromptPay" class="w-full h-full object-contain" />
         </div>
         <div class="flex-1">
           <p class="font-bold">พร้อมเพย์ (PromptPay)</p>
@@ -34,7 +34,6 @@
         :class="type === 'bank_' + acc.id
           ? 'border-blue-500 bg-blue-50 text-blue-700'
           : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
-        :style="type === 'bank_' + acc.id ? { borderColor: getBankInfo(acc.bankCode).color, backgroundColor: getBankInfo(acc.bankCode).bg } : {}"
       >
         <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
              :style="{ backgroundColor: getBankInfo(acc.bankCode).color || '#f3f4f6' }">
@@ -45,8 +44,7 @@
           <p class="font-bold">{{ getBankInfo(acc.bankCode).nameTh }}</p>
           <p class="text-xs opacity-70">โอนผ่านเลขบัญชีธนาคาร</p>
         </div>
-        <div v-if="type === 'bank_' + acc.id" class="w-5 h-5 rounded-full flex items-center justify-center"
-             :style="{ backgroundColor: getBankInfo(acc.bankCode).color || '#3b82f6' }">
+        <div v-if="type === 'bank_' + acc.id" class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
           <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
           </svg>
