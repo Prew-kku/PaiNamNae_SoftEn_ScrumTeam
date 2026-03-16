@@ -222,7 +222,12 @@
                <p class="text-xs text-gray-600">จำนวน: <span class="font-bold text-blue-700 text-sm">{{ totalAmount.toLocaleString('th-TH') }} บาท</span></p>
                <p class="text-xs text-gray-600">วิธีชำระ: <span class="font-semibold">{{ paymentMethod === 'cash' ? 'เงินสด' : 'เงินโอน' }}</span></p>
             </div>
-            <p class="text-[10px] text-amber-700 mt-4 leading-tight">กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนกดยืนยัน</p>
+            <div class="flex items-start gap-2 mt-4 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              </svg>
+              <p class="text-sm text-amber-700">กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนกดยืนยัน</p>
+            </div>
           </div>
         </div>
 
@@ -309,7 +314,7 @@ const bankAccounts = computed(() => props.booking?.driverPayment?.bankAccounts |
 
 const selectedAccount = computed(() => {
   if (!transferType.value.startsWith('bank_')) return null
-  const id = parseInt(transferType.value.split('_')[1])
+  const id = transferType.value.slice(5)
   return bankAccounts.value.find(acc => acc.id === id)
 })
 

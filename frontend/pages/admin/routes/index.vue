@@ -59,6 +59,7 @@
                                 <option value="">ทั้งหมด</option>
                                 <option value="AVAILABLE">AVAILABLE</option>
                                 <option value="FULL">FULL</option>
+                                <option value="COMPLETED">COMPLETED</option>
                                 <option value="CANCELLED">CANCELLED</option>
                             </select>
                         </div>
@@ -190,7 +191,7 @@
                                             class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
                                             :class="statusBadge(r.status)">
                                             <i class="mr-1 fa-solid"
-                                                :class="r.status === 'AVAILABLE' ? 'fa-circle-check' : r.status === 'FULL' ? 'fa-circle-xmark' : 'fa-triangle-exclamation'"></i>
+                                                :class="r.status === 'AVAILABLE' ? 'fa-circle-check' : r.status === 'FULL' ? 'fa-circle-xmark' : r.status === 'COMPLETED' ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
                                             {{ r.status || '-' }}
                                         </span>
                                     </td>
@@ -338,8 +339,9 @@ const pageButtons = computed(() => {
 
 function statusBadge(s) {
     if (s === 'AVAILABLE') return 'bg-green-100 text-green-700'
-    if (s === 'FULL') return 'bg-gray-200 text-gray-700'
+    if (s === 'FULL') return 'bg-orange-100 text-orange-700'
     if (s === 'CANCELLED') return 'bg-red-100 text-red-700'
+    if (s === 'COMPLETED') return 'bg-blue-100 text-blue-700'
     return 'bg-gray-100 text-gray-700'
 }
 

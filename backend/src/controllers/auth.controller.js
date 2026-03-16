@@ -28,7 +28,6 @@ const login = asyncHandler(async (req, res) => {
         gender,
         phoneNumber,
         otpCode,
-        nationalIdNumber,
         nationalIdPhotoUrl,
         nationalIdExpiryDate,
         selfiePhotoUrl,

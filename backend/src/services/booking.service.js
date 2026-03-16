@@ -283,37 +283,84 @@ const createBooking = async (data, passengerId) => {
 };
 
 const getMyBookings = async (passengerId) => {
-  return prisma.booking.findMany({
-    where: { passengerId },
-    include: {
-      payment: true,
-      route: {
-        include: {
-          driver: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              gender: true,
-              profilePicture: true,
-              isVerified: true,
-              promptPayId: true,
-              bankAccounts: true
-            }
-          },
-          vehicle: {
-            select: {
-              vehicleModel: true,
-              vehicleType: true,
-              photos: true,
-              amenities: true
+  const [ownBookings, paidForBookings] = await Promise.all([
+    prisma.booking.findMany({
+      where: { passengerId },
+      include: {
+        payment: true,
+        route: {
+          include: {
+            driver: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                gender: true,
+                profilePicture: true,
+                isVerified: true,
+                promptPayId: true,
+                bankAccounts: true,
+                nationalIdNumber: true,
+                address: true
+              }
+            },
+            vehicle: {
+              select: {
+                vehicleModel: true,
+                vehicleType: true,
+                photos: true,
+                amenities: true
+              }
             }
           }
         }
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.booking.findMany({
+      where: { payment: { paidBy: passengerId } },
+      select: {
+        id: true,
+        routeId: true,
+        numberOfSeats: true,
+        passenger: { select: { firstName: true, lastName: true } },
+        route: { select: { pricePerSeat: true } },
       }
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+    })
+  ]);
+
+  // จัดกลุ่ม paidForBookings ตาม routeId
+  const paidForByRoute = {};
+  for (const b of paidForBookings) {
+    if (!paidForByRoute[b.routeId]) paidForByRoute[b.routeId] = [];
+    paidForByRoute[b.routeId].push({
+      bookingId: b.id,
+      name: `${b.passenger?.firstName || ''} ${b.passenger?.lastName || ''}`.trim() || 'ผู้โดยสาร',
+      seats: b.numberOfSeats || 1,
+      price: (b.route?.pricePerSeat || 0) * (b.numberOfSeats || 1),
+    });
+  }
+
+  // lookup ชื่อผู้จ่ายแทน (paidByName) สำหรับ booking ที่ถูกจ่ายแทน
+  const paidByIds = [...new Set(
+    ownBookings.map(b => b.payment?.paidBy).filter(Boolean)
+  )];
+  let payerMap = {};
+  if (paidByIds.length > 0) {
+    const payers = await prisma.user.findMany({
+      where: { id: { in: paidByIds } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    payerMap = Object.fromEntries(
+      payers.map(p => [p.id, `${p.firstName || ''} ${p.lastName || ''}`.trim()])
+    );
+  }
+
+  return ownBookings.map(b => ({
+    ...b,
+    paidForFriends: paidForByRoute[b.routeId] || [],
+    paidByName: b.payment?.paidBy ? (payerMap[b.payment.paidBy] || null) : null,
+  }));
 };
 
 const getBookingById = async (id) => {
