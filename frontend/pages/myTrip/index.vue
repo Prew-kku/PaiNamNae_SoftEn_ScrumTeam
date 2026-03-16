@@ -270,8 +270,8 @@
             :confirmText="modalContent.confirmText" :variant="modalContent.variant" @confirm="handleConfirmAction"
             @cancel="closeConfirmModal" />
 
-        <!-- Modal แนบสลิปการโอนเงิน (Thongchai595-6) -->
-        <PaymentSlipModal
+        <!-- Modal แนบสลิปการโอนเงิน (Multi-step flow) -->
+        <MultiStepPaymentModal
             :show="showPaymentModal"
             :booking="selectedPaymentTrip"
             @close="closePaymentModal"
@@ -395,7 +395,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import ConfirmModal from '~/components/ConfirmModal.vue'
-import PaymentSlipModal from '~/components/PaymentSlipModal.vue' // Thongchai595-6
+import MultiStepPaymentModal from '~/components/MultiStepPaymentModal.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
 import html2canvas from 'html2canvas'
