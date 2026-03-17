@@ -1,0 +1,849 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.4.1 (Python 3.14.2 on win32)" generated="2026-03-04T22:59:23.453397" rpa="false" schemaversion="5">
+<suite id="s1" name="UAT TEST13" source="E:\SAVE\PaiNamNae_SoftEn_ScrumTeam\test\Product_Backlog_Items-16\uat\UAT_TEST13.robot">
+<test id="s1-t1" name="Test Cronjob 90 Days By Click UI + API Trigger" line="19">
+<kw name="Disable Insecure HTTPS Warning">
+<kw name="Evaluate" owner="BuiltIn">
+<arg>__import__('urllib3').disable_warnings(__import__('urllib3').exceptions.InsecureRequestWarning)</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-03-04T22:59:23.734563" elapsed="0.000385"/>
+</kw>
+<status status="PASS" start="2026-03-04T22:59:23.733890" elapsed="0.001161"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>[STEP] User submits deletion request via UI</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-03-04T22:59:23.735286" elapsed="0.000343"/>
+</kw>
+<kw name="User Submit Deletion Request Via UI">
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:23.736293" level="INFO">Opening browser 'chrome' to base url 'http://csse4369.cpkku.com/login'.</msg>
+<arg>${WEB_URL}</arg>
+<arg>${BROWSER}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2026-03-04T22:59:23.736117" elapsed="1.463777"/>
+</kw>
+<kw name="Maximize Browser Window" owner="SeleniumLibrary">
+<doc>Maximizes current browser window.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.200096" elapsed="0.026972"/>
+</kw>
+<kw name="Wait Until Page Contains" owner="SeleniumLibrary">
+<arg>เข้าสู่ระบบ</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until ``text`` appears on the current page.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.227358" elapsed="0.013601"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:25.241574" level="INFO">Typing text 'Test12' into text field 'id=identifier'.</msg>
+<arg>id=identifier</arg>
+<arg>${TEST_USERNAME}</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.241157" elapsed="0.078991"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:25.320834" level="INFO">Typing text 'Isaac1234' into text field 'id=password'.</msg>
+<arg>id=password</arg>
+<arg>${TEST_PASSWORD}</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.320405" elapsed="0.055709"/>
+</kw>
+<kw name="Click Button" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:25.376526" level="INFO">Clicking button 'xpath=//button[contains(text(), 'เข้าสู่ระบบ')]'.</msg>
+<arg>xpath=//button[contains(text(), 'เข้าสู่ระบบ')]</arg>
+<doc>Clicks the button identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.376312" elapsed="0.056714"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//span[contains(@class, 'text-blue-600')]</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.433225" elapsed="0.425388"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:25.858996" level="INFO">Clicking element 'xpath=//span[contains(@class, 'text-blue-600')]'.</msg>
+<arg>xpath=//span[contains(@class, 'text-blue-600')]</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.858798" elapsed="0.039486"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//a[contains(text(), 'บัญชีของฉัน')]</arg>
+<arg>timeout=5s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.898460" elapsed="0.013742"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:25.912623" level="INFO">Clicking element 'xpath=//a[contains(text(), 'บัญชีของฉัน')]'.</msg>
+<arg>xpath=//a[contains(text(), 'บัญชีของฉัน')]</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.912417" elapsed="0.074108"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//button[contains(text(), 'ลบบัญชี')]</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:25.986701" elapsed="0.037346"/>
+</kw>
+<kw name="Scroll Element Into View" owner="SeleniumLibrary">
+<arg>xpath=//button[contains(text(), 'ลบบัญชี')]</arg>
+<doc>Scrolls the element identified by ``locator`` into view.</doc>
+<status status="PASS" start="2026-03-04T22:59:26.024293" elapsed="0.271478"/>
+</kw>
+<kw name="Click Button" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:26.296244" level="INFO">Clicking button 'xpath=//button[contains(text(), 'ลบบัญชี')]'.</msg>
+<arg>xpath=//button[contains(text(), 'ลบบัญชี')]</arg>
+<doc>Clicks the button identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:26.295998" elapsed="0.052568"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:27.349444" level="INFO">Slept 1 second.</msg>
+<arg>1s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:26.348749" elapsed="1.000867"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//select</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:27.349871" elapsed="0.013703"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:27.364008" level="INFO">Clicking element 'xpath=//select'.</msg>
+<arg>xpath=//select</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:27.363782" elapsed="0.086667"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:27.951607" level="INFO">Slept 500 milliseconds.</msg>
+<arg>0.5s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:27.450665" elapsed="0.501085"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//option[@value='ไม่ต้องการใช้บริการอีกต่อไป']</arg>
+<arg>timeout=5s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:27.951948" elapsed="0.013914"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:27.966308" level="INFO">Clicking element 'xpath=//option[@value='ไม่ต้องการใช้บริการอีกต่อไป']'.</msg>
+<arg>xpath=//option[@value='ไม่ต้องการใช้บริการอีกต่อไป']</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:27.966079" elapsed="0.023230"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:28.490444" level="INFO">Slept 500 milliseconds.</msg>
+<arg>0.5s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:27.989618" elapsed="0.501012"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//input[@placeholder='กรอกรหัสผ่านของคุณ']</arg>
+<arg>timeout=5s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:28.490922" elapsed="0.014488"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:28.505885" level="INFO">Typing text 'Isaac1234' into text field 'xpath=//input[@placeholder='กรอกรหัสผ่านของคุณ']'.</msg>
+<arg>xpath=//input[@placeholder='กรอกรหัสผ่านของคุณ']</arg>
+<arg>${TEST_PASSWORD}</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:28.505615" elapsed="0.063010"/>
+</kw>
+<kw name="Press Keys" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:28.569361" level="INFO">Sending key(s) ('TAB',) to xpath=//input[@placeholder='กรอกรหัสผ่านของคุณ'] element.</msg>
+<msg time="2026-03-04T22:59:28.835486" level="INFO">Pressing special key TAB to element.</msg>
+<msg time="2026-03-04T22:59:28.835591" level="INFO">Releasing special key TAB.</msg>
+<arg>xpath=//input[@placeholder='กรอกรหัสผ่านของคุณ']</arg>
+<arg>TAB</arg>
+<doc>Simulates the user pressing key(s) to an element or on the active browser.</doc>
+<status status="PASS" start="2026-03-04T22:59:28.568868" elapsed="0.271795"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:29.341774" level="INFO">Slept 500 milliseconds.</msg>
+<arg>0.5s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:28.840895" elapsed="0.501024"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//input[@type='checkbox']</arg>
+<arg>timeout=5s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:29.342117" elapsed="0.013395"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:29.355939" level="INFO">Clicking element 'xpath=//input[@type='checkbox']'.</msg>
+<arg>xpath=//input[@type='checkbox']</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:29.355721" elapsed="0.046863"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:30.403694" level="INFO">Slept 1 second.</msg>
+<arg>1s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:29.402868" elapsed="1.000960"/>
+</kw>
+<kw name="Wait Until Element Is Enabled" owner="SeleniumLibrary">
+<arg>xpath=//button[contains(text(), 'ยืนยันการลบข้อมูล')]</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is enabled.</doc>
+<status status="PASS" start="2026-03-04T22:59:30.404020" elapsed="0.021353"/>
+</kw>
+<kw name="Click Button" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:30.425787" level="INFO">Clicking button 'xpath=//button[contains(text(), 'ยืนยันการลบข้อมูล')]'.</msg>
+<arg>xpath=//button[contains(text(), 'ยืนยันการลบข้อมูล')]</arg>
+<doc>Clicks the button identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:30.425574" elapsed="0.056160"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:34.482470" level="INFO">Slept 4 seconds.</msg>
+<arg>4s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:30.481980" elapsed="4.000669"/>
+</kw>
+<kw name="Wait Until Page Contains" owner="SeleniumLibrary">
+<arg>เข้าสู่ระบบ</arg>
+<arg>timeout=15s</arg>
+<doc>Waits until ``text`` appears on the current page.</doc>
+<status status="PASS" start="2026-03-04T22:59:34.482949" elapsed="0.008915"/>
+</kw>
+<kw name="Close Browser" owner="SeleniumLibrary">
+<doc>Closes the current browser.</doc>
+<status status="PASS" start="2026-03-04T22:59:34.492119" elapsed="2.100209"/>
+</kw>
+<status status="PASS" start="2026-03-04T22:59:23.735914" elapsed="12.856540"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>[STEP] Admin approves deletion request via UI</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-03-04T22:59:36.592732" elapsed="0.000437"/>
+</kw>
+<kw name="Admin Approve Deletion Request Via UI">
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:36.593948" level="INFO">Opening browser 'chrome' to base url 'http://csse4369.cpkku.com/login'.</msg>
+<arg>${WEB_URL}</arg>
+<arg>${BROWSER}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2026-03-04T22:59:36.593774" elapsed="1.416117"/>
+</kw>
+<kw name="Maximize Browser Window" owner="SeleniumLibrary">
+<doc>Maximizes current browser window.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.010139" elapsed="0.029284"/>
+</kw>
+<kw name="Wait Until Page Contains" owner="SeleniumLibrary">
+<arg>เข้าสู่ระบบ</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until ``text`` appears on the current page.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.039673" elapsed="0.010609"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:38.050922" level="INFO">Typing text 'admin_UAT' into text field 'id=identifier'.</msg>
+<arg>id=identifier</arg>
+<arg>${ADMIN_USERNAME}</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.050560" elapsed="0.082008"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:38.133313" level="INFO">Typing text 'passadmin' into text field 'id=password'.</msg>
+<arg>id=password</arg>
+<arg>${ADMIN_PASS}</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.132883" elapsed="0.053197"/>
+</kw>
+<kw name="Click Button" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:38.186455" level="INFO">Clicking button 'xpath=//button[contains(text(), 'เข้าสู่ระบบ')]'.</msg>
+<arg>xpath=//button[contains(text(), 'เข้าสู่ระบบ')]</arg>
+<doc>Clicks the button identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.186272" elapsed="0.061528"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//span[contains(@class, 'text-blue-600')]</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.247989" elapsed="0.424978"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:38.673597" level="INFO">Clicking element 'xpath=//span[contains(@class, 'text-blue-600')]'.</msg>
+<arg>xpath=//span[contains(@class, 'text-blue-600')]</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.673271" elapsed="0.044970"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//a[@href='/admin/users' and normalize-space()='Dashboard']</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.718524" elapsed="0.014477"/>
+</kw>
+<kw name="Execute Javascript" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:38.734071" level="INFO">Executing JavaScript:
+document.querySelector("a[href='/admin/users']")?.click();
+Without any arguments.</msg>
+<arg>document.querySelector("a[href='/admin/users']")?.click();</arg>
+<doc>Executes the given JavaScript code with possible arguments.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.733361" elapsed="0.005656"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:39.739908" level="INFO">Slept 1 second.</msg>
+<arg>1s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:38.739288" elapsed="1.000805"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//a[@href='/admin/allrequests']//span[normalize-space()='All Request']</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:39.740355" elapsed="0.013887"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:39.754816" level="INFO">Clicking element 'xpath=//a[@href='/admin/allrequests']'.</msg>
+<arg>xpath=//a[@href='/admin/allrequests']</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:39.754499" elapsed="0.081432"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:41.837120" level="INFO">Slept 2 seconds.</msg>
+<arg>2s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:39.836164" elapsed="2.001154"/>
+</kw>
+<kw name="Wait Until Element Is Not Visible" owner="SeleniumLibrary">
+<arg>css=.modal-overlay</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is not visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:41.837608" elapsed="0.009577"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//i[contains(@class, 'fa-check')]/ancestor::button[1]</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:41.847410" elapsed="0.014293"/>
+</kw>
+<kw name="Click Button" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:41.862253" level="INFO">Clicking button 'xpath=(//i[contains(@class, 'fa-check')]/ancestor::button[1])[1]'.</msg>
+<arg>xpath=(//i[contains(@class, 'fa-check')]/ancestor::button[1])[1]</arg>
+<doc>Clicks the button identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:41.861940" elapsed="0.064751"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T22:59:42.927481" level="INFO">Slept 1 second.</msg>
+<arg>1s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T22:59:41.926913" elapsed="1.000710"/>
+</kw>
+<kw name="Wait Until Element Is Visible" owner="SeleniumLibrary">
+<arg>xpath=//div[contains(@class,'modal-content')]//button[normalize-space()='อนุมัติ']</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until the element ``locator`` is visible.</doc>
+<status status="PASS" start="2026-03-04T22:59:42.927842" elapsed="0.014616"/>
+</kw>
+<kw name="Click Button" owner="SeleniumLibrary">
+<msg time="2026-03-04T22:59:42.942867" level="INFO">Clicking button 'xpath=//div[contains(@class,'modal-content')]//button[normalize-space()='อนุมัติ']'.</msg>
+<arg>xpath=//div[contains(@class,'modal-content')]//button[normalize-space()='อนุมัติ']</arg>
+<doc>Clicks the button identified by ``locator``.</doc>
+<status status="PASS" start="2026-03-04T22:59:42.942657" elapsed="0.057594"/>
+</kw>
+<kw name="Run Keyword And Ignore Error" owner="BuiltIn">
+<kw name="Wait Until Element Is Not Visible" owner="SeleniumLibrary">
+<msg time="2026-03-04T23:00:03.171704" level="INFO" html="true">&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td colspan="3"&gt;&lt;a href="selenium-screenshot-9.png"&gt;&lt;img src="selenium-screenshot-9.png" width="800px"&gt;&lt;/a&gt;</msg>
+<msg time="2026-03-04T23:00:03.171926" level="FAIL">Element 'css=.modal-overlay' still visible after 20 seconds.</msg>
+<arg>css=.modal-overlay</arg>
+<arg>timeout=20s</arg>
+<doc>Waits until the element ``locator`` is not visible.</doc>
+<status status="FAIL" start="2026-03-04T22:59:43.001050" elapsed="20.173541">Element 'css=.modal-overlay' still visible after 20 seconds.</status>
+</kw>
+<arg>Wait Until Element Is Not Visible</arg>
+<arg>css=.modal-overlay</arg>
+<arg>timeout=20s</arg>
+<doc>Runs the given keyword with the given arguments and ignores possible error.</doc>
+<status status="PASS" start="2026-03-04T22:59:43.000453" elapsed="20.174286"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2026-03-04T23:00:04.175512" level="INFO">Slept 1 second.</msg>
+<arg>1s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2026-03-04T23:00:03.174932" elapsed="1.000703"/>
+</kw>
+<kw name="Wait Until Page Contains" owner="SeleniumLibrary">
+<arg>อนุมัติแล้ว</arg>
+<arg>timeout=10s</arg>
+<doc>Waits until ``text`` appears on the current page.</doc>
+<status status="PASS" start="2026-03-04T23:00:04.175802" elapsed="0.011831"/>
+</kw>
+<kw name="Close Browser" owner="SeleniumLibrary">
+<doc>Closes the current browser.</doc>
+<status status="PASS" start="2026-03-04T23:00:04.187797" elapsed="2.132901"/>
+</kw>
+<status status="PASS" start="2026-03-04T22:59:36.593533" elapsed="29.727275"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>[STEP] Create API sessions and load latest approved request</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-03-04T23:00:06.321081" elapsed="0.000401"/>
+</kw>
+<kw name="Create Api Sessions">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:06.322276" level="INFO">Creating Session using : alias=backend, url=https://painamnaesoftenscrumteam-production.up.railway.app, headers={},                     cookies={}, auth=None, timeout=10, proxies=None, verify=False,                     debug=0 </msg>
+<arg>backend</arg>
+<arg>${BASE_URL}</arg>
+<arg>verify=${False}</arg>
+<arg>timeout=10</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-03-04T23:00:06.322084" elapsed="0.000346"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-03-04T23:00:06.322904" level="INFO">${user_login_payload} = {'username': 'Test12', 'password': 'Isaac1234'}</msg>
+<var>${user_login_payload}</var>
+<arg>username=${TEST_USERNAME}</arg>
+<arg>password=${TEST_PASSWORD}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-03-04T23:00:06.322525" elapsed="0.000401"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:09.517234" level="INFO">POST Request : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/auth/login 
+ path_url=/api/auth/login 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '47', 'Content-Type': 'application/json'} 
+ body=b'{"username": "Test12", "password": "Isaac1234"}' 
+ </msg>
+<msg time="2026-03-04T23:00:09.517346" level="INFO">POST Response : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/auth/login 
+ status=200, reason=OK 
+ headers={'Connection': 'keep-alive', 'Content-Length': '487', 'Access-Control-Allow-Credentials': 'true', 'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Content-Type': 'application/json; charset=utf-8', 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Etag': 'W/"1e7-m6kFRkGu1YCLyceEfGbcNyB7+Xo"', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Server': 'railway-edge', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-Dns-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-Railway-Edge': 'railway/asia-southeast1-eqsg3a', 'X-Railway-Request-Id': 'nk936AuARDCX3vNHVOLIQQ', 'X-Xss-Protection': '0', 'Accept-Ranges': 'bytes', 'Via': '1.1 varnish, 1.1 varnish', 'Date': 'Wed, 04 Mar 2026 16:00:09 GMT', 'X-Cache': 'MISS, MISS', 'X-Cache-Hits': '0, 0', 'X-Timer': 'S1772640010.533117,VS0,VE110', 'Vary': 'Origin', 'X-Railway-CDN-Edge': 'fastly/cache-bkk2310029-BKK'} 
+ body={"success":true,"message":"Login successful","data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1jN2F3NmswMGJ3Y2twa2R3ZGpsYW9jIiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MjY0MDAwOSwiZXhwIjoxNzcyNjQzNjA5fQ.YrdUiROQ51O4D0cSpOu8eOkvgwU35AUW-rE9MLtkAik","user":{"id":"cmmc7aw6k00bwckpkdwdjlaoc","firstName":"Test9","lastName":"Test9","profilePicture":null,"role":"PASSENGER","deletionPending":true,"passengerSuspendedUntil":null,"driverSuspendedUntil":null,"promptPayId":null}}} 
+ </msg>
+<msg time="2026-03-04T23:00:09.517511" level="INFO">${user_login} = &lt;Response [200]&gt;</msg>
+<var>${user_login}</var>
+<arg>backend</arg>
+<arg>/api/auth/login</arg>
+<arg>json=${user_login_payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-03-04T23:00:06.323004" elapsed="3.194530"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.518198" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${user_login.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.517670" elapsed="0.000576"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.518850" level="INFO">${user_login_json} = {'success': True, 'message': 'Login successful', 'data': {'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1jN2F3NmswMGJ3Y2twa2R3ZGpsYW9jIiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MjY0MDAwOSw...</msg>
+<var>${user_login_json}</var>
+<arg>$user_login.json()</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.518327" elapsed="0.000549"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.519334" level="INFO">${user_token} = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1jN2F3NmswMGJ3Y2twa2R3ZGpsYW9jIiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MjY0MDAwOSwiZXhwIjoxNzcyNjQzNjA5fQ.YrdUiROQ51O4D0cSpOu8eOkvgwU35AUW-rE9MLtkAik</msg>
+<var>${user_token}</var>
+<arg>${user_login_json['data']['token']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.518962" elapsed="0.000395"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.519774" level="INFO">${admin_login_payload} = {'username': 'admin_UAT', 'password': 'passadmin'}</msg>
+<var>${admin_login_payload}</var>
+<arg>username=${ADMIN_USERNAME}</arg>
+<arg>password=${ADMIN_PASS}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.519461" elapsed="0.000335"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:09.637584" level="INFO">POST Request : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/auth/login 
+ path_url=/api/auth/login 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '50', 'Content-Type': 'application/json'} 
+ body=b'{"username": "admin_UAT", "password": "passadmin"}' 
+ </msg>
+<msg time="2026-03-04T23:00:09.637700" level="INFO">POST Response : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/auth/login 
+ status=200, reason=OK 
+ headers={'Connection': 'keep-alive', 'Content-Length': '486', 'Access-Control-Allow-Credentials': 'true', 'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Content-Type': 'application/json; charset=utf-8', 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Etag': 'W/"1e6-i6EuIGwW/wMZc2tGrrTV4TCPghA"', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Server': 'railway-edge', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-Dns-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-Railway-Edge': 'railway/asia-southeast1-eqsg3a', 'X-Railway-Request-Id': 'D3l8IS2qRiWNljqxAXC71g', 'X-Xss-Protection': '0', 'Accept-Ranges': 'bytes', 'Via': '1.1 varnish, 1.1 varnish', 'Date': 'Wed, 04 Mar 2026 16:00:09 GMT', 'X-Cache': 'MISS, MISS', 'X-Cache-Hits': '0, 0', 'X-Timer': 'S1772640010.661429,VS0,VE102', 'Vary': 'Origin', 'X-Railway-CDN-Edge': 'fastly/cache-bkk2310029-BKK'} 
+ body={"success":true,"message":"Login successful","data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxyeW8zM2wwMDBmMTNmOGJqdDBkZm8xIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyNjQwMDA5LCJleHAiOjE3NzI2NDM2MDl9.VWnO7p7qY7TtRi41vqKVEO2Q79HFBuYFZ49m1LEzm_8","user":{"id":"cmlryo33l000f13f8bjt0dfo1","firstName":"admin_UAT","lastName":"admin_UAT","profilePicture":null,"role":"ADMIN","deletionPending":false,"passengerSuspendedUntil":null,"driverSuspendedUntil":null,"promptPayId":null}}} 
+ </msg>
+<msg time="2026-03-04T23:00:09.637856" level="INFO">${admin_login} = &lt;Response [200]&gt;</msg>
+<var>${admin_login}</var>
+<arg>backend</arg>
+<arg>/api/auth/login</arg>
+<arg>json=${admin_login_payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.519876" elapsed="0.118009"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.638511" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${admin_login.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.638035" elapsed="0.000527"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.638912" level="INFO">${admin_login_json} = {'success': True, 'message': 'Login successful', 'data': {'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxyeW8zM2wwMDBmMTNmOGJqdDBkZm8xIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyNjQwMDA5LCJleHA...</msg>
+<var>${admin_login_json}</var>
+<arg>$admin_login.json()</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.638645" elapsed="0.000292"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.639369" level="INFO">${admin_token} = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxyeW8zM2wwMDBmMTNmOGJqdDBkZm8xIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyNjQwMDA5LCJleHAiOjE3NzI2NDM2MDl9.VWnO7p7qY7TtRi41vqKVEO2Q79HFBuYFZ49m1LEzm_8</msg>
+<var>${admin_token}</var>
+<arg>${admin_login_json['data']['token']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.639017" elapsed="0.000373"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.639707" level="INFO">${user_headers} = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1jN2F3NmswMGJ3Y2twa2R3ZGpsYW9jIiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MjY0MDAwOSwiZXhwIjoxNzcyNjQzNjA5fQ.YrdUiROQ51O4D0cSpO...</msg>
+<var>${user_headers}</var>
+<arg>Authorization=Bearer ${user_token}</arg>
+<arg>Content-Type=application/json</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.639469" elapsed="0.000258"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.640026" level="INFO">${admin_headers} = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxyeW8zM2wwMDBmMTNmOGJqdDBkZm8xIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyNjQwMDA5LCJleHAiOjE3NzI2NDM2MDl9.VWnO7p7qY7TtRi41vqKVEO2Q...</msg>
+<var>${admin_headers}</var>
+<arg>Authorization=Bearer ${admin_token}</arg>
+<arg>Content-Type=application/json</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.639800" elapsed="0.000247"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:09.640299" level="INFO">Creating Session using : alias=user_api, url=https://painamnaesoftenscrumteam-production.up.railway.app, headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1jN2F3NmswMGJ3Y2twa2R3ZGpsYW9jIiwicm9sZSI6IlBBU1NFTkdFUiIsImlhdCI6MTc3MjY0MDAwOSwiZXhwIjoxNzcyNjQzNjA5fQ.YrdUiROQ51O4D0cSpOu8eOkvgwU35AUW-rE9MLtkAik', 'Content-Type': 'application/json'},                     cookies={}, auth=None, timeout=10, proxies=None, verify=False,                     debug=0 </msg>
+<arg>user_api</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${user_headers}</arg>
+<arg>verify=${False}</arg>
+<arg>timeout=10</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-03-04T23:00:09.640119" elapsed="0.000316"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:09.640670" level="INFO">Creating Session using : alias=admin_api, url=https://painamnaesoftenscrumteam-production.up.railway.app, headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxyeW8zM2wwMDBmMTNmOGJqdDBkZm8xIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyNjQwMDA5LCJleHAiOjE3NzI2NDM2MDl9.VWnO7p7qY7TtRi41vqKVEO2Q79HFBuYFZ49m1LEzm_8', 'Content-Type': 'application/json'},                     cookies={}, auth=None, timeout=10, proxies=None, verify=False,                     debug=0 </msg>
+<arg>admin_api</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${admin_headers}</arg>
+<arg>verify=${False}</arg>
+<arg>timeout=10</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-03-04T23:00:09.640509" elapsed="0.000243"/>
+</kw>
+<status status="PASS" start="2026-03-04T23:00:06.321846" elapsed="3.318963"/>
+</kw>
+<kw name="Get Latest Request Id By User">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.641514" level="INFO">${query_params} = {'status': 'APPROVED', 'q': 'Test12'}</msg>
+<var>${query_params}</var>
+<arg>status=${status}</arg>
+<arg>q=${TEST_USERNAME}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.641263" elapsed="0.000271"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:09.745257" level="INFO">GET Request : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/deletion/admin/requests?status=APPROVED&amp;q=Test12 
+ path_url=/api/deletion/admin/requests?status=APPROVED&amp;q=Test12 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxyeW8zM2wwMDBmMTNmOGJqdDBkZm8xIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyNjQwMDA5LCJleHAiOjE3NzI2NDM2MDl9.VWnO7p7qY7TtRi41vqKVEO2Q79HFBuYFZ49m1LEzm_8', 'Content-Type': 'application/json'} 
+ body=None 
+ </msg>
+<msg time="2026-03-04T23:00:09.745365" level="INFO">GET Response : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/deletion/admin/requests?status=APPROVED&amp;q=Test12 
+ status=200, reason=OK 
+ headers={'Connection': 'keep-alive', 'Content-Length': '1247', 'Access-Control-Allow-Credentials': 'true', 'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Content-Type': 'application/json; charset=utf-8', 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Etag': 'W/"4df-Us2G4WDeTEulJ2OZRUU/Ka+8pl4"', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Server': 'railway-edge', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-Dns-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-Railway-Edge': 'railway/asia-southeast1-eqsg3a', 'X-Railway-Request-Id': 'z5uOcgaeS76H0UaBAXC71g', 'X-Xss-Protection': '0', 'Accept-Ranges': 'bytes', 'Via': '1.1 varnish, 1.1 varnish', 'Date': 'Wed, 04 Mar 2026 16:00:09 GMT', 'X-Cache': 'MISS, MISS', 'X-Cache-Hits': '0, 0', 'X-Timer': 'S1772640010.825824,VS0,VE46', 'Vary': 'Origin', 'X-Railway-CDN-Edge': 'fastly/cache-bkk2310033-BKK'} 
+ body={"data":[{"id":"cmmc82j9600ejckpkqnm0zuyi","userId":"cmmc7aw6k00bwckpkdwdjlaoc","reason":"ไม่ต้องการใช้บริการอีกต่อไป","backupData":{"initiatedAt":"2026-03-04T15:59:30.776Z","transitionSummary":{"bookingByStatus":[],"routeByStatus":[],"deletedAtRequestTime":{"passengerBookingCount":0,"driverRouteCount":0},"travelRouteSnapshotSummary":{"driverRouteCount":0,"passengerBookingCount":0},"containsPersonalData":true},"travelRouteSnapshot":{"driverRoutes":[],"passengerBookings":[]},"containsPersonalData":true,"note":"Retention metadata and travel route snapshot","approvedContext":{"role":"PASSENGER","approvedBy":"ADMIN","gracePeriodDays":90,"containsPersonalData":false},"precheck":{"activePassengerBookings":0,"activeDriverBookings":0}},"status":"APPROVED","requestedAt":"2026-03-04T15:59:30.811Z","approvedAt":"2026-03-04T15:59:43.241Z","scheduledDeleteAt":"2026-06-02T15:59:43.241Z","createdAt":"2026-03-04T15:59:30.811Z","updatedAt":"2026-03-04T15:59:43.245Z","user":{"id":"cmmc7aw6k00bwckpkdwdjlaoc","email":"Test@gmail.com","username":"Test12","role":"PASSENGER","firstName":"Test9","lastName":"Test9","profilePicture":null}}],"pagination":{"page":1,"limit":20,"total":1,"totalPages":1}} 
+ </msg>
+<msg time="2026-03-04T23:00:09.745494" level="INFO">${list_resp} = &lt;Response [200]&gt;</msg>
+<var>${list_resp}</var>
+<arg>admin_api</arg>
+<arg>/api/deletion/admin/requests</arg>
+<arg>params=${query_params}</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.641605" elapsed="0.103912"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.746411" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${list_resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.745654" elapsed="0.000802"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.746854" level="INFO">${list_json} = {'data': [{'id': 'cmmc82j9600ejckpkqnm0zuyi', 'userId': 'cmmc7aw6k00bwckpkdwdjlaoc', 'reason': 'ไม่ต้องการใช้บริการอีกต่อไป', 'backupData': {'initiatedAt': '2026-03-04T15:59:30.776Z', 'transitionSumma...</msg>
+<var>${list_json}</var>
+<arg>$list_resp.json()</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.746546" elapsed="0.000334"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.747390" level="INFO">${requests} = [{'id': 'cmmc82j9600ejckpkqnm0zuyi', 'userId': 'cmmc7aw6k00bwckpkdwdjlaoc', 'reason': 'ไม่ต้องการใช้บริการอีกต่อไป', 'backupData': {'initiatedAt': '2026-03-04T15:59:30.776Z', 'transitionSummary': {'bo...</msg>
+<var>${requests}</var>
+<arg>${list_json['data']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.746957" elapsed="0.000463"/>
+</kw>
+<kw name="Get Length" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.747785" level="INFO">Length is 1.</msg>
+<msg time="2026-03-04T23:00:09.747837" level="INFO">${request_count} = 1</msg>
+<var>${request_count}</var>
+<arg>${requests}</arg>
+<doc>Returns and logs the length of the given item as an integer.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.747493" elapsed="0.000362"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${request_count} &gt; 0</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.747934" elapsed="0.000192"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-03-04T23:00:09.748410" level="INFO">${request_id} = cmmc82j9600ejckpkqnm0zuyi</msg>
+<var>${request_id}</var>
+<arg>$requests[0]['id']</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.748199" elapsed="0.000236"/>
+</kw>
+<return>
+<value>${request_id}</value>
+<status status="PASS" start="2026-03-04T23:00:09.748513" elapsed="0.000055"/>
+</return>
+<msg time="2026-03-04T23:00:09.748705" level="INFO">${request_id} = cmmc82j9600ejckpkqnm0zuyi</msg>
+<var>${request_id}</var>
+<arg>APPROVED</arg>
+<status status="PASS" start="2026-03-04T23:00:09.641074" elapsed="0.107651"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>[STEP] Request id: ${request_id}</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.748943" elapsed="0.000337"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>[STEP] Fast-forward request to &gt;90 days</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.749529" elapsed="0.000244"/>
+</kw>
+<kw name="PUT On Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:10.006462" level="INFO">PUT Request : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/test/cron/fast-forward/cmmc82j9600ejckpkqnm0zuyi 
+ path_url=/api/test/cron/fast-forward/cmmc82j9600ejckpkqnm0zuyi 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '0'} 
+ body=None 
+ </msg>
+<msg time="2026-03-04T23:00:10.006573" level="INFO">PUT Response : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/test/cron/fast-forward/cmmc82j9600ejckpkqnm0zuyi 
+ status=200, reason=OK 
+ headers={'Connection': 'keep-alive', 'Content-Length': '121', 'Access-Control-Allow-Credentials': 'true', 'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Content-Type': 'application/json; charset=utf-8', 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Etag': 'W/"79-AAHYKzQtuY8Midqxjt/BpohwQS0"', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Server': 'railway-edge', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-Dns-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-Railway-Edge': 'railway/asia-southeast1-eqsg3a', 'X-Railway-Request-Id': '9su3Py9qQ7-tbJnmAQeqjw', 'X-Xss-Protection': '0', 'Accept-Ranges': 'bytes', 'Via': '1.1 varnish, 1.1 varnish', 'Date': 'Wed, 04 Mar 2026 16:00:10 GMT', 'X-Cache': 'MISS, MISS', 'X-Cache-Hits': '0, 0', 'X-Timer': 'S1772640010.892681,VS0,VE233', 'Vary': 'Origin', 'X-Railway-CDN-Edge': 'fastly/cache-bkk2310029-BKK'} 
+ body={"message":"Time fast-forwarded 90 days. The request is now eligible for deletion.","newDate":"2025-12-03T16:00:10.117Z"} 
+ </msg>
+<msg time="2026-03-04T23:00:10.006684" level="INFO">${ff_resp} = &lt;Response [200]&gt;</msg>
+<var>${ff_resp}</var>
+<arg>backend</arg>
+<arg>/api/test/cron/fast-forward/${request_id}</arg>
+<doc>Sends a PUT request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-03-04T23:00:09.749943" elapsed="0.256763"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-03-04T23:00:10.007720" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${ff_resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-03-04T23:00:10.007012" elapsed="0.000775"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>[STEP] Trigger cron and verify DELETED</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-03-04T23:00:10.007979" elapsed="0.000327"/>
+</kw>
+<kw name="Wait Until Keyword Succeeds" owner="BuiltIn">
+<kw name="Trigger Cron And Request Should Become Deleted">
+<kw name="Run Keyword And Ignore Error" owner="BuiltIn">
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:13.068947" level="INFO">POST Request : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/test/cron/deletion 
+ path_url=/api/test/cron/deletion 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '0'} 
+ body=None 
+ </msg>
+<msg time="2026-03-04T23:00:13.069075" level="INFO">POST Response : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/test/cron/deletion 
+ status=200, reason=OK 
+ headers={'Connection': 'keep-alive', 'Content-Length': '54', 'Access-Control-Allow-Credentials': 'true', 'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Content-Type': 'application/json; charset=utf-8', 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Etag': 'W/"36-S8Q9L9t4YmA6GEXK7EOO9zkemOc"', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Server': 'railway-edge', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-Dns-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-Railway-Edge': 'railway/asia-southeast1-eqsg3a', 'X-Railway-Request-Id': 'Likkj30pRJeSZeSqAQeqjw', 'X-Xss-Protection': '0', 'Accept-Ranges': 'bytes', 'Via': '1.1 varnish, 1.1 varnish', 'Date': 'Wed, 04 Mar 2026 16:00:13 GMT', 'X-Cache': 'MISS, MISS', 'X-Cache-Hits': '0, 0', 'X-Timer': 'S1772640010.152033,VS0,VE3041', 'Vary': 'Origin', 'X-Railway-CDN-Edge': 'fastly/cache-bkk2310029-BKK'} 
+ body={"message":"Deletion cron job executed successfully."} 
+ </msg>
+<arg>backend</arg>
+<arg>/api/test/cron/deletion</arg>
+<arg>expected_status=any</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-03-04T23:00:10.009300" elapsed="3.059862"/>
+</kw>
+<msg time="2026-03-04T23:00:13.069342" level="INFO">${cron_call_status} = PASS</msg>
+<msg time="2026-03-04T23:00:13.069392" level="INFO">${cron_call_result} = &lt;Response [200]&gt;</msg>
+<var>${cron_call_status}</var>
+<var>${cron_call_result}</var>
+<arg>POST On Session</arg>
+<arg>backend</arg>
+<arg>/api/test/cron/deletion</arg>
+<arg>expected_status=any</arg>
+<doc>Runs the given keyword with the given arguments and ignores possible error.</doc>
+<status status="PASS" start="2026-03-04T23:00:10.009087" elapsed="3.060330"/>
+</kw>
+<kw name="Log" owner="BuiltIn">
+<msg time="2026-03-04T23:00:13.069917" level="INFO">Cron trigger result: PASS</msg>
+<arg>Cron trigger result: ${cron_call_status}</arg>
+<doc>Logs the given message with the given level.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.069625" elapsed="0.000341"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:13.135286" level="INFO">GET Request : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/deletion/admin/requests/cmmc82j9600ejckpkqnm0zuyi 
+ path_url=/api/deletion/admin/requests/cmmc82j9600ejckpkqnm0zuyi 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxyeW8zM2wwMDBmMTNmOGJqdDBkZm8xIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyNjQwMDA5LCJleHAiOjE3NzI2NDM2MDl9.VWnO7p7qY7TtRi41vqKVEO2Q79HFBuYFZ49m1LEzm_8', 'Content-Type': 'application/json'} 
+ body=None 
+ </msg>
+<msg time="2026-03-04T23:00:13.135422" level="INFO">GET Response : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/deletion/admin/requests/cmmc82j9600ejckpkqnm0zuyi 
+ status=200, reason=OK 
+ headers={'Connection': 'keep-alive', 'Content-Length': '3259', 'Access-Control-Allow-Credentials': 'true', 'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Content-Type': 'application/json; charset=utf-8', 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Etag': 'W/"cbb-f2914TC6i0RHKx1HS2Ps/EFIAV0"', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Server': 'railway-edge', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-Dns-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-Railway-Edge': 'railway/asia-southeast1-eqsg3a', 'X-Railway-Request-Id': 'y7wpyEiQRl2mZodrDcO5xA', 'X-Xss-Protection': '0', 'Accept-Ranges': 'bytes', 'Via': '1.1 varnish, 1.1 varnish', 'Date': 'Wed, 04 Mar 2026 16:00:13 GMT', 'X-Cache': 'MISS, MISS', 'X-Cache-Hits': '0, 0', 'X-Timer': 'S1772640013.212754,VS0,VE49', 'Vary': 'Origin', 'X-Railway-CDN-Edge': 'fastly/cache-bkk2310033-BKK'} 
+ body={"id":"cmmc82j9600ejckpkqnm0zuyi","userId":"cmmc7aw6k00bwckpkdwdjlaoc","reason":"ไม่ต้องการใช้บริการอีกต่อไป","backupData":{"initiatedAt":"2026-03-04T15:59:30.776Z","transitionSummary":{"bookingByStatus":[],"routeByStatus":[],"deletedAtRequestTime":{"passengerBookingCount":0,"driverRouteCount":0},"travelRouteSnapshotSummary":{"driverRouteCount":0,"passengerBookingCount":0},"containsPersonalData":true},"travelRouteSnapshot":{"driverRoutes":[],"passengerBookings":[]},"containsPersonalData":true,"note":"Retention metadata and travel route snapshot","approvedContext":{"role":"PASSENGER","approvedBy":"ADMIN","gracePeriodDays":90,"containsPersonalData":false},"precheck":{"activePassengerBookings":0,"activeDriverBookings":0}},"status":"DELETED","requestedAt":"2026-03-04T15:59:30.811Z","approvedAt":"2025-12-03T16:00:10.117Z","scheduledDeleteAt":"2026-03-04T16:00:10.207Z","createdAt":"2026-03-04T15:59:30.811Z","updatedAt":"2026-03-04T16:00:10.259Z","user":{"id":"cmmc7aw6k00bwckpkdwdjlaoc","email":"deleted+fed5ee5d32baf148adfff27d@deleted.local","username":"deleted_fed5ee5d32ba","role":"PASSENGER","firstName":"Deleted","lastName":"User","profilePicture":null},"audits":[{"id":"cmmc83dp400etckpklspfmqvl","requestId":"cmmc82j9600ejckpkqnm0zuyi","originalUserId":"70914f24b1665228ac3c12ee0b70f0e7","originalEmail":null,"eventTime":"2026-03-04T16:00:10.265Z","reason":"ไม่ต้องการใช้บริการอีกต่อไป","status":"DELETED","performedBy":"SYSTEM_CRON","backupData":{"containsPersonalData":false}},{"id":"cmmc83dom00erckpk3do78p81","requestId":"cmmc82j9600ejckpkqnm0zuyi","originalUserId":"70914f24b1665228ac3c12ee0b70f0e7","originalEmail":null,"eventTime":"2026-03-04T16:00:10.246Z","reason":"ไม่ต้องการใช้บริการอีกต่อไป","status":"ANONYMIZED","performedBy":"SYSTEM_CRON","backupData":{"evidenceType":"IRREVERSIBLE_ANONYMIZATION","retentionDays":90,"cloudinaryAssetCount":2,"routeRedactedCount":0,"bookingPassengerRedactedCount":0,"bookingRouteRedactedCount":0,"containsPersonalData":false}},{"id":"cmmc82sun00eockpkg27gc7ln","requestId":"cmmc82j9600ejckpkqnm0zuyi","originalUserId":"user_cmmc7aw6k00bwckpkdwdjlaoc","originalEmail":null,"eventTime":"2026-03-04T15:59:43.241Z","reason":"ไม่ต้องการใช้บริการอีกต่อไป","status":"APPROVED","performedBy":"ADMIN","backupData":{"gracePeriodDays":90,"scheduledDeleteAt":"2026-06-02T15:59:43.241Z","containsPersonalData":false}},{"id":"cmmc82j9b00elckpk3zjag0al","requestId":"cmmc82j9600ejckpkqnm0zuyi","originalUserId":"user_cmmc7aw6k00bwckpkdwdjlaoc","originalEmail":null,"eventTime":"2026-03-04T15:59:30.776Z","reason":"ไม่ต้องการใช้บริการอีกต่อไป","status":"REQUESTED","performedBy":"USER","backupData":{"transitionSummary":{"bookingByStatus":[],"routeByStatus":[],"deletedAtRequestTime":{"passengerBookingCount":0,"driverRouteCount":0},"travelRouteSnapshotSummary":{"driverRouteCount":0,"passengerBookingCount":0},"containsPersonalData":true},"travelRouteSnapshot":{"driverRouteCount":0,"passengerBookingCount":0},"containsPersonalData":true}}]} 
+ </msg>
+<msg time="2026-03-04T23:00:13.135631" level="INFO">${detail_resp} = &lt;Response [200]&gt;</msg>
+<var>${detail_resp}</var>
+<arg>admin_api</arg>
+<arg>/api/deletion/admin/requests/${request_id}</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.070043" elapsed="0.065613"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-03-04T23:00:13.136265" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${detail_resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.135802" elapsed="0.000520"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-03-04T23:00:13.136752" level="INFO">${detail_json} = {'id': 'cmmc82j9600ejckpkqnm0zuyi', 'userId': 'cmmc7aw6k00bwckpkdwdjlaoc', 'reason': 'ไม่ต้องการใช้บริการอีกต่อไป', 'backupData': {'initiatedAt': '2026-03-04T15:59:30.776Z', 'transitionSummary': {'boo...</msg>
+<var>${detail_json}</var>
+<arg>$detail_resp.json()</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.136406" elapsed="0.000373"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${detail_json['status']}</arg>
+<arg>DELETED</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.136852" elapsed="0.000388"/>
+</kw>
+<arg>${request_id}</arg>
+<status status="PASS" start="2026-03-04T23:00:10.008837" elapsed="3.128484"/>
+</kw>
+<arg>45 sec</arg>
+<arg>5 sec</arg>
+<arg>Trigger Cron And Request Should Become Deleted</arg>
+<arg>${request_id}</arg>
+<doc>Runs the specified keyword and retries if it fails.</doc>
+<status status="PASS" start="2026-03-04T23:00:10.008481" elapsed="3.128886"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>[STEP] Verify audit trail contains anonymization/deletion</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.137561" elapsed="0.000218"/>
+</kw>
+<kw name="Wait Until Keyword Succeeds" owner="BuiltIn">
+<kw name="Request Should Have Deletion Audit">
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-03-04T23:00:13.194147" level="INFO">GET Request : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/deletion/admin/requests/cmmc82j9600ejckpkqnm0zuyi 
+ path_url=/api/deletion/admin/requests/cmmc82j9600ejckpkqnm0zuyi 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWxyeW8zM2wwMDBmMTNmOGJqdDBkZm8xIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyNjQwMDA5LCJleHAiOjE3NzI2NDM2MDl9.VWnO7p7qY7TtRi41vqKVEO2Q79HFBuYFZ49m1LEzm_8', 'Content-Type': 'application/json'} 
+ body=None 
+ </msg>
+<msg time="2026-03-04T23:00:13.194312" level="INFO">GET Response : url=https://painamnaesoftenscrumteam-production.up.railway.app/api/deletion/admin/requests/cmmc82j9600ejckpkqnm0zuyi 
+ status=200, reason=OK 
+ headers={'Connection': 'keep-alive', 'Content-Length': '3259', 'Access-Control-Allow-Credentials': 'true', 'Content-Security-Policy': "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests", 'Content-Type': 'application/json; charset=utf-8', 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin', 'Etag': 'W/"cbb-f2914TC6i0RHKx1HS2Ps/EFIAV0"', 'Origin-Agent-Cluster': '?1', 'Referrer-Policy': 'no-referrer', 'Server': 'railway-edge', 'Strict-Transport-Security': 'max-age=15552000; includeSubDomains', 'X-Content-Type-Options': 'nosniff', 'X-Dns-Prefetch-Control': 'off', 'X-Download-Options': 'noopen', 'X-Frame-Options': 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies': 'none', 'X-Railway-Edge': 'railway/asia-southeast1-eqsg3a', 'X-Railway-Request-Id': 'vbRB2wCBSSGi8gyVDcO5xA', 'X-Xss-Protection': '0', 'Accept-Ranges': 'bytes', 'Via': '1.1 varnish, 1.1 varnish', 'Date': 'Wed, 04 Mar 2026 16:00:13 GMT', 'X-Cache': 'MISS, MISS', 'X-Cache-Hits': '0, 0', 'X-Timer': 'S1772640013.279031,VS0,VE43', 'Vary': 'Origin', 'X-Railway-CDN-Edge': 'fastly/cache-bkk2310033-BKK'} 
+ body={"id":"cmmc82j9600ejckpkqnm0zuyi","userId":"cmmc7aw6k00bwckpkdwdjlaoc","reason":"ไม่ต้องการใช้บริการอีกต่อไป","backupData":{"initiatedAt":"2026-03-04T15:59:30.776Z","transitionSummary":{"bookingByStatus":[],"routeByStatus":[],"deletedAtRequestTime":{"passengerBookingCount":0,"driverRouteCount":0},"travelRouteSnapshotSummary":{"driverRouteCount":0,"passengerBookingCount":0},"containsPersonalData":true},"travelRouteSnapshot":{"driverRoutes":[],"passengerBookings":[]},"containsPersonalData":true,"note":"Retention metadata and travel route snapshot","approvedContext":{"role":"PASSENGER","approvedBy":"ADMIN","gracePeriodDays":90,"containsPersonalData":false},"precheck":{"activePassengerBookings":0,"activeDriverBookings":0}},"status":"DELETED","requestedAt":"2026-03-04T15:59:30.811Z","approvedAt":"2025-12-03T16:00:10.117Z","scheduledDeleteAt":"2026-03-04T16:00:10.207Z","createdAt":"2026-03-04T15:59:30.811Z","updatedAt":"2026-03-04T16:00:10.259Z","user":{"id":"cmmc7aw6k00bwckpkdwdjlaoc","email":"deleted+fed5ee5d32baf148adfff27d@deleted.local","username":"deleted_fed5ee5d32ba","role":"PASSENGER","firstName":"Deleted","lastName":"User","profilePicture":null},"audits":[{"id":"cmmc83dp400etckpklspfmqvl","requestId":"cmmc82j9600ejckpkqnm0zuyi","originalUserId":"70914f24b1665228ac3c12ee0b70f0e7","originalEmail":null,"eventTime":"2026-03-04T16:00:10.265Z","reason":"ไม่ต้องการใช้บริการอีกต่อไป","status":"DELETED","performedBy":"SYSTEM_CRON","backupData":{"containsPersonalData":false}},{"id":"cmmc83dom00erckpk3do78p81","requestId":"cmmc82j9600ejckpkqnm0zuyi","originalUserId":"70914f24b1665228ac3c12ee0b70f0e7","originalEmail":null,"eventTime":"2026-03-04T16:00:10.246Z","reason":"ไม่ต้องการใช้บริการอีกต่อไป","status":"ANONYMIZED","performedBy":"SYSTEM_CRON","backupData":{"evidenceType":"IRREVERSIBLE_ANONYMIZATION","retentionDays":90,"cloudinaryAssetCount":2,"routeRedactedCount":0,"bookingPassengerRedactedCount":0,"bookingRouteRedactedCount":0,"containsPersonalData":false}},{"id":"cmmc82sun00eockpkg27gc7ln","requestId":"cmmc82j9600ejckpkqnm0zuyi","originalUserId":"user_cmmc7aw6k00bwckpkdwdjlaoc","originalEmail":null,"eventTime":"2026-03-04T15:59:43.241Z","reason":"ไม่ต้องการใช้บริการอีกต่อไป","status":"APPROVED","performedBy":"ADMIN","backupData":{"gracePeriodDays":90,"scheduledDeleteAt":"2026-06-02T15:59:43.241Z","containsPersonalData":false}},{"id":"cmmc82j9b00elckpk3zjag0al","requestId":"cmmc82j9600ejckpkqnm0zuyi","originalUserId":"user_cmmc7aw6k00bwckpkdwdjlaoc","originalEmail":null,"eventTime":"2026-03-04T15:59:30.776Z","reason":"ไม่ต้องการใช้บริการอีกต่อไป","status":"REQUESTED","performedBy":"USER","backupData":{"transitionSummary":{"bookingByStatus":[],"routeByStatus":[],"deletedAtRequestTime":{"passengerBookingCount":0,"driverRouteCount":0},"travelRouteSnapshotSummary":{"driverRouteCount":0,"passengerBookingCount":0},"containsPersonalData":true},"travelRouteSnapshot":{"driverRouteCount":0,"passengerBookingCount":0},"containsPersonalData":true}}]} 
+ </msg>
+<msg time="2026-03-04T23:00:13.194504" level="INFO">${detail_resp} = &lt;Response [200]&gt;</msg>
+<var>${detail_resp}</var>
+<arg>admin_api</arg>
+<arg>/api/deletion/admin/requests/${request_id}</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.138463" elapsed="0.056075"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-03-04T23:00:13.195238" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${detail_resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.194741" elapsed="0.000546"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-03-04T23:00:13.195759" level="INFO">${detail_json} = {'id': 'cmmc82j9600ejckpkqnm0zuyi', 'userId': 'cmmc7aw6k00bwckpkdwdjlaoc', 'reason': 'ไม่ต้องการใช้บริการอีกต่อไป', 'backupData': {'initiatedAt': '2026-03-04T15:59:30.776Z', 'transitionSummary': {'boo...</msg>
+<var>${detail_json}</var>
+<arg>$detail_resp.json()</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.195404" elapsed="0.000382"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-03-04T23:00:13.196251" level="INFO">${audits} = [{'id': 'cmmc83dp400etckpklspfmqvl', 'requestId': 'cmmc82j9600ejckpkqnm0zuyi', 'originalUserId': '70914f24b1665228ac3c12ee0b70f0e7', 'originalEmail': None, 'eventTime': '2026-03-04T16:00:10.265Z', 're...</msg>
+<var>${audits}</var>
+<arg>${detail_json['audits']}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.195864" elapsed="0.000411"/>
+</kw>
+<kw name="Get Length" owner="BuiltIn">
+<msg time="2026-03-04T23:00:13.196525" level="INFO">Length is 4.</msg>
+<msg time="2026-03-04T23:00:13.196575" level="INFO">${audit_count} = 4</msg>
+<var>${audit_count}</var>
+<arg>${audits}</arg>
+<doc>Returns and logs the length of the given item as an integer.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.196349" elapsed="0.000244"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${audit_count} &gt; 0</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.196660" elapsed="0.000188"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-03-04T23:00:13.197222" level="INFO">${has_deleted_or_anonymized} = True</msg>
+<var>${has_deleted_or_anonymized}</var>
+<arg>any(a.get('status') in ['ANONYMIZED', 'DELETED'] for a in $audits)</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.196921" elapsed="0.000323"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${has_deleted_or_anonymized}</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.197316" elapsed="0.000168"/>
+</kw>
+<arg>${request_id}</arg>
+<status status="PASS" start="2026-03-04T23:00:13.138276" elapsed="0.059263"/>
+</kw>
+<arg>20 sec</arg>
+<arg>5 sec</arg>
+<arg>Request Should Have Deletion Audit</arg>
+<arg>${request_id}</arg>
+<doc>Runs the specified keyword and retries if it fails.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.137930" elapsed="0.059653"/>
+</kw>
+<kw name="Log To Console" owner="BuiltIn">
+<arg>[DONE] Cron 90-day UI+API test passed</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.197760" elapsed="0.000211"/>
+</kw>
+<doc>User ยื่นคำขอผ่าน UI -&gt; Admin อนุมัติผ่าน UI -&gt; fast-forward + trigger cron ผ่าน API -&gt; ตรวจ DELETED + audit</doc>
+<status status="PASS" start="2026-03-04T22:59:23.732566" elapsed="49.465641"/>
+</test>
+<kw name="Close All Browsers" owner="SeleniumLibrary" type="TEARDOWN">
+<doc>Closes all open browsers and resets the browser cache.</doc>
+<status status="PASS" start="2026-03-04T23:00:13.198728" elapsed="0.000116"/>
+</kw>
+<doc>UAT-TEST13: ยื่นลบบัญชี + อนุมัติแบบคลิกหน้าเว็บ แล้วทดสอบ cron 90 วันด้วย fast-forward</doc>
+<status status="PASS" start="2026-03-04T22:59:23.454988" elapsed="49.743891"/>
+</suite>
+<statistics>
+<total>
+<stat pass="1" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat name="UAT TEST13" id="s1" pass="1" fail="0" skip="0">UAT TEST13</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>

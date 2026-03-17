@@ -82,6 +82,48 @@
                                 </div>
                             </div>
 
+                            <!-- ที่อยู่ -->
+                            <div class="space-y-3">
+                                <label class="block text-sm font-medium text-gray-700">
+                                    ที่อยู่
+                                    <span class="ml-1 text-xs font-normal text-orange-500">(จำเป็นสำหรับออกใบเสร็จ)</span>
+                                </label>
+                                <input
+                                    v-model="form.addrHouseNo"
+                                    type="text"
+                                    placeholder="บ้านเลขที่ / ถนน / ซอย"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <input
+                                        v-model="form.addrSubDistrict"
+                                        type="text"
+                                        placeholder="ตำบล / แขวง"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <input
+                                        v-model="form.addrDistrict"
+                                        type="text"
+                                        placeholder="อำเภอ / เขต"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <select
+                                        v-model="form.addrProvince"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    >
+                                        <option value="">-- เลือกจังหวัด --</option>
+                                        <option v-for="p in PROVINCES" :key="p" :value="p">{{ p }}</option>
+                                    </select>
+                                    <input
+                                        v-model="form.addrPostalCode"
+                                        type="text"
+                                        maxlength="5"
+                                        placeholder="รหัสไปรษณีย์"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+
                             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div>
                                     <label class="block mb-2 text-sm font-medium text-gray-700">วันที่สร้างบัญชี</label>
@@ -179,6 +221,19 @@ import 'dayjs/locale/th'
 // Thongchai595-6
 import DeleteAccountRequestModal from '~/components/DeleteAccountRequestModal.vue'
 
+const PROVINCES = [
+  'กระบี่','กรุงเทพมหานคร','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร','ขอนแก่น','จันทบุรี','ฉะเชิงเทรา',
+  'ชลบุรี','ชัยนาท','ชัยภูมิ','ชุมพร','เชียงราย','เชียงใหม่','ตรัง','ตราด','ตาก','นครนายก',
+  'นครปฐม','นครพนม','นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส','น่าน',
+  'บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์','ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา',
+  'พะเยา','พังงา','พัทลุง','พิจิตร','พิษณุโลก','เพชรบุรี','เพชรบูรณ์','แพร่','ภูเก็ต',
+  'มหาสารคาม','มุกดาหาร','แม่ฮ่องสอน','ยโสธร','ยะลา','ร้อยเอ็ด','ระนอง','ระยอง','ราชบุรี',
+  'ลพบุรี','ลำปาง','ลำพูน','เลย','ศรีสะเกษ','สกลนคร','สงขลา','สตูล','สมุทรปราการ',
+  'สมุทรสงคราม','สมุทรสาคร','สระแก้ว','สระบุรี','สิงห์บุรี','สุโขทัย','สุพรรณบุรี',
+  'สุราษฎร์ธานี','สุรินทร์','หนองคาย','หนองบัวลำภู','อ่างทอง','อำนาจเจริญ','อุดรธานี',
+  'อุตรดิตถ์','อุทัยธานี','อุบลราชธานี',
+]
+
 
 dayjs.locale('th')
 
@@ -201,11 +256,15 @@ const form = reactive({
     lastName: '',
     email: '',
     phoneNumber: '',
+    addrHouseNo: '',
+    addrSubDistrict: '',
+    addrDistrict: '',
+    addrProvince: '',
+    addrPostalCode: '',
     profilePictureFile: null,
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
-
 });
 
 let originalUserData = null;
@@ -227,6 +286,14 @@ const resetForm = () => {
         form.lastName = originalUserData.lastName || '';
         form.email = originalUserData.email || '';
         form.phoneNumber = originalUserData.phoneNumber || '';
+        // parse ที่อยู่เดิม (ถ้ามีการบันทึกแบบ structured แล้ว)
+        const addr = originalUserData.address || '';
+        const addrParts = addr ? addr.split('|') : [];
+        form.addrHouseNo      = addrParts[0] || '';
+        form.addrSubDistrict  = addrParts[1] || '';
+        form.addrDistrict     = addrParts[2] || '';
+        form.addrProvince     = addrParts[3] || '';
+        form.addrPostalCode   = addrParts[4] || '';
         previewUrl.value = originalUserData.profilePicture || `https://ui-avatars.com/api/?name=${form.firstName || 'U'}&background=random&size=128`;
 
         form.currentPassword = '';
@@ -262,6 +329,10 @@ async function handleProfileUpdate() {
         formData.append('lastName', form.lastName);
         formData.append('email', form.email);
         formData.append('phoneNumber', form.phoneNumber);
+        // เก็บแบบ pipe-separated เพื่อ parse กลับได้, ใช้แสดงแบบ human-readable ใน receipt
+        const addrStr = [form.addrHouseNo, form.addrSubDistrict, form.addrDistrict, form.addrProvince, form.addrPostalCode]
+            .map(s => s.trim()).join('|');
+        formData.append('address', addrStr);
 
         if (form.profilePictureFile) {
             formData.append('profilePicture', form.profilePictureFile);

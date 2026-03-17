@@ -26,12 +26,14 @@ const submitPaymentSlip = async (bookingId, passengerId, file, method) => {
     }
   });
   if (!booking) throw new ApiError(404, 'Booking not found');
+  let isFellowPaying = false;
   if (booking.passengerId !== passengerId) {
     // Allow a fellow passenger (COMPLETED booking in same route) to pay on behalf
     const requesterBooking = await prisma.booking.findFirst({
       where: { routeId: booking.routeId, passengerId, status: 'COMPLETED' }
     });
     if (!requesterBooking) throw new ApiError(403, 'Forbidden');
+    isFellowPaying = true;
   }
   if (booking.status !== 'COMPLETED') {
     throw new ApiError(400, 'Booking must be COMPLETED before submitting payment');
@@ -62,7 +64,8 @@ const submitPaymentSlip = async (bookingId, passengerId, file, method) => {
         slipPublicId: public_id,
         submittedAt: new Date(),
         rejectedAt: null,
-        rejectReason: null
+        rejectReason: null,
+        ...(isFellowPaying && { paidBy: passengerId })
       }
     });
 
@@ -198,12 +201,14 @@ const declareCashPayment = async (bookingId, passengerId) => {
     }
   });
   if (!booking) throw new ApiError(404, 'Booking not found');
+  let isFellowPaying = false;
   if (booking.passengerId !== passengerId) {
     // Allow a fellow passenger (COMPLETED booking in same route) to declare cash on behalf
     const requesterBooking = await prisma.booking.findFirst({
       where: { routeId: booking.routeId, passengerId, status: 'COMPLETED' }
     });
     if (!requesterBooking) throw new ApiError(403, 'Forbidden');
+    isFellowPaying = true;
   }
   if (booking.status !== 'COMPLETED') {
     throw new ApiError(400, 'Booking must be COMPLETED');
@@ -216,7 +221,7 @@ const declareCashPayment = async (bookingId, passengerId) => {
   return prisma.$transaction(async (tx) => {
     const payment = await tx.payment.update({
       where: { id: booking.payment.id },
-      data: { method: 'CASH' }
+      data: { method: 'CASH', ...(isFellowPaying && { paidBy: passengerId }) }
     });
 
     await tx.notification.create({

@@ -1,53 +1,146 @@
-﻿*** Settings ***
-Documentation     Test Suite สำหรับทดสอบ Cronjob การลบข้อมูล 90 วัน
+# -*- coding: utf-8 -*-
+*** Settings ***
+Documentation     UAT-TEST13: ยื่นลบบัญชี + อนุมัติแบบคลิกหน้าเว็บ แล้วทดสอบ cron 90 วันด้วย fast-forward
+Library           SeleniumLibrary
 Library           RequestsLibrary
 Library           Collections
+Suite Teardown    Close All Browsers
 
 *** Variables ***
-${BASE_URL}       https://painamnaesoftenscrumteam-production.up.railway.app
-${TEST_USERNAME}  Test_UAT
-${TEST_PASSWORD}  123456789
-${ADMIN_USERNAME}    admin_UAT
-${ADMIN_PASS}     passadmin
+${WEB_URL}          http://csse4369.cpkku.com/login
+${BASE_URL}         https://painamnaesoftenscrumteam-production.up.railway.app
+${BROWSER}          chrome
+${TEST_USERNAME}    Test9
+${TEST_PASSWORD}    Isaac1234
+${ADMIN_USERNAME}   admin_UAT
+${ADMIN_PASS}       passadmin
 
 *** Test Cases ***
-Test Cronjob 90 Days Works With Deployed API
-    [Documentation]    ทดสอบ Cronjob จริงโดยใช้เว็บที่ deploy: สร้างคำขอ -> อนุมัติ -> fast-forward 91 วัน -> trigger cron -> ตรวจสถานะเป็น DELETED
+Test Cronjob 90 Days By Click UI + API Trigger
+    [Documentation]    User ยื่นคำขอผ่าน UI -> Admin อนุมัติผ่าน UI -> fast-forward + trigger cron ผ่าน API -> ตรวจ DELETED + audit
     Disable Insecure HTTPS Warning
 
-    # 1) Login ฝั่ง user
-    Log To Console    [STEP] Login user/admin and prepare sessions
+    Log To Console    [STEP] User submits deletion request via UI
+    User Submit Deletion Request Via UI
+
+    Log To Console    [STEP] Admin approves deletion request via UI
+    Admin Approve Deletion Request Via UI
+
+    Log To Console    [STEP] Create API sessions and load latest approved request
+    Create Api Sessions
+    ${request_id}=    Get Latest Request Id By User    APPROVED
+    Log To Console    [STEP] Request id: ${request_id}
+
+    Log To Console    [STEP] Fast-forward request to >90 days
+    ${ff_resp}=    PUT On Session    backend    /api/test/cron/fast-forward/${request_id}
+    Should Be Equal As Integers    ${ff_resp.status_code}    200
+
+    Log To Console    [STEP] Trigger cron and verify DELETED
+    Wait Until Keyword Succeeds    45 sec    5 sec    Trigger Cron And Request Should Become Deleted    ${request_id}
+
+    Log To Console    [STEP] Verify audit trail contains anonymization/deletion
+    Wait Until Keyword Succeeds    20 sec    5 sec    Request Should Have Deletion Audit    ${request_id}
+    Log To Console    [DONE] Cron 90-day UI+API test passed
+
+*** Keywords ***
+Disable Insecure HTTPS Warning
+    Evaluate    __import__('urllib3').disable_warnings(__import__('urllib3').exceptions.InsecureRequestWarning)
+
+User Submit Deletion Request Via UI
+    Open Browser    ${WEB_URL}    ${BROWSER}
+    Maximize Browser Window
+    Wait Until Page Contains    เข้าสู่ระบบ    timeout=10s
+
+    Input Text      id=identifier    ${TEST_USERNAME}
+    Input Text      id=password      ${TEST_PASSWORD}
+    Click Button    xpath=//button[contains(text(), 'เข้าสู่ระบบ')]
+    Wait Until Element Is Visible    xpath=//span[contains(@class, 'text-blue-600')]    timeout=10s
+
+    Click Element   xpath=//span[contains(@class, 'text-blue-600')]
+    Wait Until Element Is Visible    xpath=//a[contains(text(), 'บัญชีของฉัน')]    timeout=5s
+    Click Element   xpath=//a[contains(text(), 'บัญชีของฉัน')]
+    Wait Until Element Is Visible    xpath=//button[contains(text(), 'ลบบัญชี')]    timeout=10s
+
+    Scroll Element Into View    xpath=//button[contains(text(), 'ลบบัญชี')]
+    Click Button    xpath=//button[contains(text(), 'ลบบัญชี')]
+    Sleep    1s
+
+    Wait Until Element Is Visible    xpath=//select    timeout=10s
+    Click Element                    xpath=//select
+    Sleep    0.5s
+    Wait Until Element Is Visible    xpath=//option[@value='ไม่ต้องการใช้บริการอีกต่อไป']    timeout=5s
+    Click Element                    xpath=//option[@value='ไม่ต้องการใช้บริการอีกต่อไป']
+    Sleep    0.5s
+
+    Wait Until Element Is Visible    xpath=//input[@placeholder='กรอกรหัสผ่านของคุณ']    timeout=5s
+    Input Text                       xpath=//input[@placeholder='กรอกรหัสผ่านของคุณ']    ${TEST_PASSWORD}
+    Press Keys                       xpath=//input[@placeholder='กรอกรหัสผ่านของคุณ']    TAB
+    Sleep    0.5s
+
+    Wait Until Element Is Visible    xpath=//input[@type='checkbox']    timeout=5s
+    Click Element                    xpath=//input[@type='checkbox']
+    Sleep    1s
+
+    Wait Until Element Is Enabled    xpath=//button[contains(text(), 'ยืนยันการลบข้อมูล')]    timeout=10s
+    Click Button                     xpath=//button[contains(text(), 'ยืนยันการลบข้อมูล')]
+
+    Sleep    4s
+    Wait Until Page Contains    เข้าสู่ระบบ    timeout=15s
+    Close Browser
+
+Admin Approve Deletion Request Via UI
+    Open Browser    ${WEB_URL}    ${BROWSER}
+    Maximize Browser Window
+    Wait Until Page Contains    เข้าสู่ระบบ    timeout=10s
+
+    Input Text      id=identifier    ${ADMIN_USERNAME}
+    Input Text      id=password      ${ADMIN_PASS}
+    Click Button    xpath=//button[contains(text(), 'เข้าสู่ระบบ')]
+    Wait Until Element Is Visible    xpath=//span[contains(@class, 'text-blue-600')]    timeout=10s
+
+    Click Element   xpath=//span[contains(@class, 'text-blue-600')]
+    Wait Until Element Is Visible    xpath=//a[contains(., 'Dashboard')]    timeout=5s
+    Click Element                    xpath=//a[contains(., 'Dashboard')]
+    Sleep    1s
+
+    Wait Until Element Is Visible    xpath=//span[contains(text(), 'All Request')]    timeout=10s
+    Click Element                    xpath=//span[contains(text(), 'All Request')]
+    Sleep    2s
+
+    Wait Until Element Is Visible    xpath=//i[contains(@class, 'fa-check')]    timeout=10s
+    Click Element                    xpath=//i[contains(@class, 'fa-check')]
+    Sleep    1s
+
+    Wait Until Element Is Visible    xpath=//button[contains(text(), 'อนุมัติ')]    timeout=5s
+    Click Button    xpath=//button[contains(text(), 'อนุมัติ')]
+    Sleep    3s
+
+    Wait Until Page Contains    อนุมัติแล้ว    timeout=10s
+    Close Browser
+
+Create Api Sessions
     Create Session    backend    ${BASE_URL}    verify=${False}    timeout=10
+
     ${user_login_payload}=    Create Dictionary    username=${TEST_USERNAME}    password=${TEST_PASSWORD}
     ${user_login}=    POST On Session    backend    /api/auth/login    json=${user_login_payload}
     Should Be Equal As Integers    ${user_login.status_code}    200
     ${user_login_json}=    Evaluate    $user_login.json()
     ${user_token}=    Set Variable    ${user_login_json['data']['token']}
 
-    # 2) Login ฝั่ง admin
     ${admin_login_payload}=    Create Dictionary    username=${ADMIN_USERNAME}    password=${ADMIN_PASS}
     ${admin_login}=    POST On Session    backend    /api/auth/login    json=${admin_login_payload}
     Should Be Equal As Integers    ${admin_login.status_code}    200
     ${admin_login_json}=    Evaluate    $admin_login.json()
     ${admin_token}=    Set Variable    ${admin_login_json['data']['token']}
 
-    # 3) สร้าง session ที่มี Authorization header
     ${user_headers}=    Create Dictionary    Authorization=Bearer ${user_token}    Content-Type=application/json
     ${admin_headers}=    Create Dictionary    Authorization=Bearer ${admin_token}    Content-Type=application/json
     Create Session    user_api     ${BASE_URL}    headers=${user_headers}    verify=${False}    timeout=10
     Create Session    admin_api    ${BASE_URL}    headers=${admin_headers}    verify=${False}    timeout=10
 
-    # 4) Cleanup คำขอเดิมที่ค้างอยู่ (ถ้ามี)
-    POST On Session    user_api    /api/deletion/cancel    expected_status=any
-
-    # 5) User ส่งคำขอลบบัญชีใหม่
-    Log To Console    [STEP] User sends deletion request
-    ${request_body}=    Create Dictionary    password=${TEST_PASSWORD}    reason=ทดสอบ cron 90 วัน
-    ${create_req}=    POST On Session    user_api    /api/deletion/request    json=${request_body}
-    Should Be Equal As Integers    ${create_req.status_code}    200
-
-    # 6) Admin หา request ล่าสุดของ user และอนุมัติ
-    ${query_params}=    Create Dictionary    status=PENDING    q=${TEST_USERNAME}
+Get Latest Request Id By User
+    [Arguments]    ${status}=APPROVED
+    ${query_params}=    Create Dictionary    status=${status}    q=${TEST_USERNAME}
     ${list_resp}=    GET On Session    admin_api    /api/deletion/admin/requests    params=${query_params}
     Should Be Equal As Integers    ${list_resp.status_code}    200
     ${list_json}=    Evaluate    $list_resp.json()
@@ -55,37 +148,7 @@ Test Cronjob 90 Days Works With Deployed API
     ${request_count}=    Get Length    ${requests}
     Should Be True    ${request_count} > 0
     ${request_id}=    Evaluate    $requests[0]['id']
-    Log To Console    [STEP] Request id: ${request_id}
-
-    Log To Console    [STEP] Admin approves request
-    Wait Until Keyword Succeeds    45 sec    8 sec    Approve Request Should Succeed    ${request_id}
-
-    # 7) จำลองเวลาผ่านไป 91 วันด้วย endpoint test
-    Log To Console    [STEP] Fast-forward request to >90 days
-    ${ff_resp}=    PUT On Session    backend    /api/test/cron/fast-forward/${request_id}
-    Should Be Equal As Integers    ${ff_resp.status_code}    200
-    Request Should Be Eligible For Deletion    ${request_id}
-
-    # 9) ตรวจสอบผลว่าคำร้องถูกประมวลผลแล้ว
-    Log To Console    [STEP] Trigger cron and verify DELETED
-    Wait Until Keyword Succeeds    30 sec    5 sec    Trigger Cron And Request Should Become Deleted    ${request_id}
-    Log To Console    [STEP] Verify audit trail contains anonymization/deletion
-    Wait Until Keyword Succeeds    20 sec    5 sec    Request Should Have Deletion Audit    ${request_id}
-    Log To Console    [DONE] Cron 90-day test passed
-
-*** Keywords ***
-Disable Insecure HTTPS Warning
-    Evaluate    __import__('urllib3').disable_warnings(__import__('urllib3').exceptions.InsecureRequestWarning)
-
-Request Should Be Eligible For Deletion
-    [Arguments]    ${request_id}
-    ${detail_resp}=    GET On Session    admin_api    /api/deletion/admin/requests/${request_id}
-    Should Be Equal As Integers    ${detail_resp.status_code}    200
-    ${detail_json}=    Evaluate    $detail_resp.json()
-    ${status}=    Set Variable    ${detail_json['status']}
-    ${scheduled_delete_at}=    Evaluate    $detail_json.get('scheduledDeleteAt')
-    ${is_eligible}=    Evaluate    ($status == 'DELETED') or ($scheduled_delete_at is not None)
-    Should Be True    ${is_eligible}    Request is not eligible after fast-forward. Backend test endpoint may not update scheduledDeleteAt.
+    RETURN    ${request_id}
 
 Trigger Cron And Request Should Become Deleted
     [Arguments]    ${request_id}
@@ -106,13 +169,3 @@ Request Should Have Deletion Audit
     Should Be True    ${audit_count} > 0
     ${has_deleted_or_anonymized}=    Evaluate    any(a.get('status') in ['ANONYMIZED', 'DELETED'] for a in $audits)
     Should Be True    ${has_deleted_or_anonymized}
-
-Approve Request Should Succeed
-    [Arguments]    ${request_id}
-    ${approve_call_status}    ${approve_call_result}=    Run Keyword And Ignore Error    PATCH On Session    admin_api    /api/deletion/admin/requests/${request_id}/approve    expected_status=any
-    ${detail_resp}=    GET On Session    admin_api    /api/deletion/admin/requests/${request_id}
-    Should Be Equal As Integers    ${detail_resp.status_code}    200
-    ${detail_json}=    Evaluate    $detail_resp.json()
-    ${current_status}=    Set Variable    ${detail_json['status']}
-    ${is_approved_or_deleted}=    Evaluate    $current_status in ['APPROVED', 'DELETED']
-    Should Be True    ${is_approved_or_deleted}

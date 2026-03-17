@@ -98,6 +98,32 @@
                                         </select>
                                     </div>
                                 </div>
+
+                                <!-- ที่อยู่ -->
+                                <div class="mt-4">
+                                    <label class="block mb-2 text-xs font-medium text-gray-600">ที่อยู่</label>
+                                    <div class="space-y-2">
+                                        <input v-model.trim="form.addrHouseNo" type="text"
+                                            placeholder="บ้านเลขที่ / ถนน / ซอย"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
+                                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                            <input v-model.trim="form.addrSubDistrict" type="text"
+                                                placeholder="ตำบล / แขวง"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
+                                            <input v-model.trim="form.addrDistrict" type="text"
+                                                placeholder="อำเภอ / เขต"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
+                                            <select v-model="form.addrProvince"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white">
+                                                <option value="">-- เลือกจังหวัด --</option>
+                                                <option v-for="p in PROVINCES" :key="p" :value="p">{{ p }}</option>
+                                            </select>
+                                            <input v-model.trim="form.addrPostalCode" type="text" maxlength="5"
+                                                placeholder="รหัสไปรษณีย์"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- National ID -->
@@ -188,6 +214,19 @@ import { useToast } from '~/composables/useToast'
 
 definePageMeta({ middleware: ['admin-auth'] })
 
+const PROVINCES = [
+    'กระบี่','กรุงเทพมหานคร','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร','ขอนแก่น','จันทบุรี','ฉะเชิงเทรา',
+    'ชลบุรี','ชัยนาท','ชัยภูมิ','ชุมพร','เชียงราย','เชียงใหม่','ตรัง','ตราด','ตาก','นครนายก',
+    'นครปฐม','นครพนม','นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส','น่าน',
+    'บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์','ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา',
+    'พะเยา','พังงา','พัทลุง','พิจิตร','พิษณุโลก','เพชรบุรี','เพชรบูรณ์','แพร่','ภูเก็ต',
+    'มหาสารคาม','มุกดาหาร','แม่ฮ่องสอน','ยโสธร','ยะลา','ร้อยเอ็ด','ระนอง','ระยอง','ราชบุรี',
+    'ลพบุรี','ลำปาง','ลำพูน','เลย','ศรีสะเกษ','สกลนคร','สงขลา','สตูล','สมุทรปราการ',
+    'สมุทรสงคราม','สมุทรสาคร','สระแก้ว','สระบุรี','สิงห์บุรี','สุโขทัย','สุพรรณบุรี',
+    'สุราษฎร์ธานี','สุรินทร์','หนองคาย','หนองบัวลำภู','อ่างทอง','อำนาจเจริญ','อุดรธานี',
+    'อุตรดิตถ์','อุทัยธานี','อุบลราชธานี',
+]
+
 const route = useRoute()
 const { toast } = useToast()
 
@@ -204,7 +243,12 @@ const form = reactive({
     nationalIdNumber: '',
     nationalIdExpiryDate: '', // YYYY-MM-DD (input)
     nationalIdPhotoUrl: null, // File | null
-    selfiePhotoUrl: null      // File | null
+    selfiePhotoUrl: null,     // File | null
+    addrHouseNo: '',
+    addrSubDistrict: '',
+    addrDistrict: '',
+    addrProvince: '',
+    addrPostalCode: '',
 })
 
 const isLoading = ref(true)
@@ -352,6 +396,13 @@ async function fetchUser() {
         form.nationalIdNumber = u.nationalIdNumber || ''
         form.nationalIdExpiryDate = isoToInputDate(u.nationalIdExpiryDate)
 
+        const addrParts = (u.address || '').split('|')
+        form.addrHouseNo     = addrParts[0] || ''
+        form.addrSubDistrict = addrParts[1] || ''
+        form.addrDistrict    = addrParts[2] || ''
+        form.addrProvince    = addrParts[3] || ''
+        form.addrPostalCode  = addrParts[4] || ''
+
         idPreview.value = u.nationalIdPhotoUrl || null
         selfiePreview.value = u.selfiePhotoUrl || null
     } catch (err) {
@@ -424,6 +475,9 @@ async function handleSubmit() {
         fd.append('nationalIdNumber', form.nationalIdNumber)
         fd.append('nationalIdExpiryDate', toISODate(form.nationalIdExpiryDate))
         fd.append('role', form.role)
+        const addrStr = [form.addrHouseNo, form.addrSubDistrict, form.addrDistrict, form.addrProvince, form.addrPostalCode]
+            .map(s => (s || '').trim()).join('|')
+        fd.append('address', addrStr)
 
         // แนบไฟล์เฉพาะที่ผู้ใช้เลือกใหม่ (File instance)
         if (form.nationalIdPhotoUrl instanceof File) {

@@ -25,6 +25,7 @@ const updateMyProfileSchema = z.object({
     lastName: z.string().min(1, "lastname is require").optional(),
     phoneNumber: z.string().min(10, "phoneNumber is require").optional(),
     gender: z.string().min(1, "gender is require").optional(),
+    address: z.string().optional(),
     // role: z.nativeEnum(Role).optional(),
     // isVerified: z.coerce.boolean({
     //     required_error: "isVerified field is required",

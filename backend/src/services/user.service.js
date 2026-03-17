@@ -126,7 +126,7 @@ const getUserPublicById = async (id) => {
         select: {
             id: true, firstName: true, lastName: true,
             profilePicture: true, role: true, isVerified: true,
-            createdAt: true
+            createdAt: true, nationalIdNumber: true, address: true
         }
     });
     if (!user) throw new ApiError(404, 'User not found');

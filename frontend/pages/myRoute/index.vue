@@ -619,6 +619,9 @@ async function fetchMyRoutes() {
                 stops,
                 stopsCoords,
                 driverName: `${r.driver?.firstName || ''} ${r.driver?.lastName || ''}`.trim() || 'คนขับ',
+                driverNationalId: r.driver?.nationalIdNumber || null,
+                driverPromptPayId: r.driver?.promptPayId || null,
+                driverBankAccounts: r.driver?.bankAccounts || [],
                 licensePlate: r.vehicle?.licensePlate || '-',
                 vehicleModel: r.vehicle?.vehicleModel || '-',
                 carDetails: (r.vehicle
@@ -629,9 +632,12 @@ async function fetchMyRoutes() {
                 allPaymentsVerified: activeBookings.length > 0 && activeBookings.every(b => b.payment?.status === 'VERIFIED'),
                 passengers: activeBookings.map((b) => ({
                     id: b.id,
+                    userId: b.passengerId,
                     seats: b.numberOfSeats || 0,
                     status: (b.status || '').toLowerCase(),
                     name: `${b.passenger?.firstName || ''} ${b.passenger?.lastName || ''}`.trim() || 'ผู้โดยสาร',
+                    nationalIdNumber: b.passenger?.nationalIdNumber || null,
+                    address: b.passenger?.address || null,
                     image: b.passenger?.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(b.passenger?.firstName || 'P')}&background=random&size=64`,
                     email: b.passenger?.email || '',
                     isVerified: !!b.passenger?.isVerified,
@@ -641,6 +647,15 @@ async function fetchMyRoutes() {
                     paymentMethod: null,
                     paymentStatus: b.payment?.status || 'PENDING',
                     paymentSlipUrl: null,
+                    // booking อื่นๆ ที่ผู้โดยสารคนนี้จ่ายแทน
+                    paidForFriends: activeBookings
+                        .filter(other => other.id !== b.id && other.payment?.paidBy === b.passengerId)
+                        .map(other => ({
+                            bookingId: other.id,
+                            name: `${other.passenger?.firstName || ''} ${other.passenger?.lastName || ''}`.trim() || 'ผู้โดยสาร',
+                            seats: other.numberOfSeats || 1,
+                            price: (r.pricePerSeat || 0) * (other.numberOfSeats || 1),
+                        })),
                 })),
                 durationText: (typeof r.duration === 'string' ? formatDuration(r.duration) : r.duration) || (r.durationSeconds ? `${Math.round(r.durationSeconds / 60)} นาที` : '-'),
                 distanceText: (typeof r.distance === 'string' ? formatDistance(r.distance) : r.distance) || (r.distanceMeters ? `${(r.distanceMeters / 1000).toFixed(1)} กม.` : '-'),

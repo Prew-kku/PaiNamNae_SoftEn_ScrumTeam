@@ -110,6 +110,36 @@
                                             {{ user.gender || '-' }}
                                         </div>
                                     </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">บ้านเลขที่ / ถนน / ซอย</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ user.address?.split('|')[0] || '-' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">ตำบล / แขวง</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ user.address?.split('|')[1] || '-' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">อำเภอ / เขต</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ user.address?.split('|')[2] || '-' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">จังหวัด</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ user.address?.split('|')[3] || '-' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">รหัสไปรษณีย์</label>
+                                        <div class="w-full px-3 py-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
+                                            {{ user.address?.split('|')[4] || '-' }}
+                                        </div>
+                                    </div>
                                     <!-- ตัดสถานะ Active ออกตามที่ขอ -->
                                 </div>
                             </section>

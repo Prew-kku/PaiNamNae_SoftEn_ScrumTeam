@@ -1,0 +1,44 @@
+import tailwindcssVite from "@tailwindcss/vite";
+
+export default defineNuxtConfig({
+  compatibilityDate: "2025-05-15",
+  devtools: { enabled: true },
+  
+  runtimeConfig: {
+    public: {
+      // ให้รับค่ามาจาก Environment (ที่ส่งมาจาก Docker/Env)
+      // ถ้าหาไม่เจอ (เช่นลืมใส่) จะใช้ localhost เป็นค่าสำรอง
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000/api/',
+      
+      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyA0_nkEKngbvQJ_K5uLrfVlHMC0WBWWRYI'
+    },
+  },
+
+  devServer: {
+    port: 3001,
+  },
+  plugins: ["~/plugins/api.client.js"],
+  app: {
+    head: {
+      title: "ไปนำแหน่",
+      meta: [{ name: "description", content: "รายละเอียด" }],
+      charset: "utf-8",
+      viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+      link: [
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap' }
+      ]
+    },
+
+  },
+  vite: {
+    plugins: [tailwindcssVite()],
+  },
+
+  css: [
+    'leaflet/dist/leaflet.css',
+    '~/assets/css/input.css',
+  ],
+  build: {
+    transpile: ['leaflet']
+  },
+});  
