@@ -31,7 +31,8 @@
                                     type="text"
                                     placeholder="เบอร์โทรศัพท์ หรือ เลขบัตรประชาชน"
                                     maxlength="13"
-                                    class="flex-1 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    :class="['flex-1 px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500', promptPayError ? 'border-red-400' : 'border-gray-300']"
+                                    @input="promptPayError = ''"
                                 />
                                 <button
                                     @click="savePromptPay"
@@ -41,6 +42,7 @@
                                     {{ isSavingPromptPay ? 'กำลังบันทึก...' : 'บันทึก' }}
                                 </button>
                             </div>
+                            <p v-if="promptPayError" class="mt-1.5 text-xs text-red-500">{{ promptPayError }}</p>
                             <p class="mt-1.5 text-xs text-gray-400">รองรับเบอร์โทรศัพท์ (10 หลัก) หรือเลขบัตรประชาชน (13 หลัก)</p>
                         </div>
 
@@ -369,12 +371,20 @@ const fetchPaymentInfo = async () => {
     //]
 }
 
+const promptPayError = ref('')
+
 const savePromptPay = async () => {
+    const val = promptPayId.value?.trim() ?? ''
+    if (!/^\d{10}$/.test(val) && !/^\d{13}$/.test(val)) {
+        promptPayError.value = 'กรุณากรอกเลข PromptPay ให้ครบ 10 หลัก (เบอร์โทรศัพท์) หรือ 13 หลัก (เลขบัตรประชาชน)'
+        return
+    }
+    promptPayError.value = ''
     isSavingPromptPay.value = true
     try {
         await $api('/users/me/payment-info/promptpay', {
             method: 'PUT',
-            body: { promptPayId: promptPayId.value }
+            body: { promptPayId: val }
         })
         toast.success('บันทึกสำเร็จ', 'อัปเดตหมายเลข PromptPay แล้ว')
     } catch (error) {
