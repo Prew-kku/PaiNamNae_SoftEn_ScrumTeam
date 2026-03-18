@@ -21,6 +21,10 @@ exports.updatePromptPay = asyncHandler(async (req, res) => {
     const userId = req.user.sub;
     const { promptPayId } = req.body;
 
+    if (!promptPayId || !/^\d{10}$|^\d{13}$/.test(promptPayId)) {
+        return res.status(400).json({ success: false, message: 'หมายเลข PromptPay ต้องเป็นตัวเลข 10 หรือ 13 หลักเท่านั้น' });
+    }
+
     await prisma.user.update({
         where: { id: userId },
         data: { promptPayId }
