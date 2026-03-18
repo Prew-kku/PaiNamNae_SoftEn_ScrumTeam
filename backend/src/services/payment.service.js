@@ -12,7 +12,11 @@ const getPaymentByBooking = async (bookingId, userId) => {
   });
   if (!booking) throw new ApiError(404, 'Booking not found');
   if (booking.passengerId !== userId && booking.route.driverId !== userId) {
-    throw new ApiError(403, 'Forbidden');
+    // ตรวจสอบว่าเป็นผู้ร่วมเดินทาง (fellow passenger) หรือไม่
+    const fellowBooking = await prisma.booking.findFirst({
+      where: { routeId: booking.routeId, passengerId: userId, status: 'COMPLETED' }
+    });
+    if (!fellowBooking) throw new ApiError(403, 'Forbidden');
   }
   return booking.payment;
 };
